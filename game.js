@@ -1,6 +1,16 @@
 var canvas = document.getElementById('game');
 var ctx = canvas.getContext('2d');
 
+//player movement variables
+var playerVelocityX = 5;
+var gravityValue = 10;
+
+//
+//projectile params
+var ejected = false;
+var wasLeft = false;
+//
+//canvas variables
 var tiles = [];
 var tilesRunDown = false;
 var baseTile = new Image();
@@ -11,6 +21,7 @@ var neutralInteractable = new Image();
 neutralInteractable.src = "../js13kgames_entry/tiles/neutral.png";
 var beneficialInteractable = new Image();
 beneficialInteractable.src = "../js13kgames_entry/tiles/beneficial.png";
+//
 
 
 class Game {
@@ -74,6 +85,7 @@ class Player {
         this.w = w;
         this.h = h;
         this.jY = 0; // how far up is the player from his initial Y before jumping
+        
     }
 
     draw() {
@@ -110,22 +122,22 @@ class Player {
             this.jY += 10;
         }
         if (this.x_direction == -1 && this.horizontalCollision() != 'left') 
-            this.x -= 10;
+            this.x -= playerVelocityX;
         if (this.x_direction == 1 && this.horizontalCollision() != 'right') 
-            this.x += 10;
+            this.x += playerVelocityX;
     }
 
     verticalCollision() {
         // Tiles, -y collision
         for (var x = 0; x < tiles.length; x++)
-            if (this.y + this.h - 5 == tiles[x][1])
+            if (this.y + this.h - 5 >= tiles[x][1])
                 return true;
         return false;
     }
 
     horizontalCollision() {
         // Canvas Collision
-        if (this.x + this.w + 1 > 500)
+        if (this.x + this.w > 500)
             return 'right';
         if (this.x - 1 < 0)
             return 'left';
@@ -134,7 +146,7 @@ class Player {
 
     processGravity() {
         if (!this.verticalCollision() && game.gravity) {
-            this.y += 10;
+            this.y += gravityValue;
             this.jY -= 10;
             if (this.jY == 0) this.y_direction = 0;
         }
@@ -146,13 +158,19 @@ function eventHandler() {
     window.addEventListener('keydown', function(event) {
         if (event.keyCode == 38) // up
         {
-            if (player.jY == 0) {
+            if (player.jY <= 0) {
+                player.jY = 0;
                 player.y_direction = 1;
                 game.gravity = false;
             }
         }
+        if (event.keyCode == 32) // space
+        {
+            ejected=true;      
+        }
         if (event.keyCode == 37) { // left
             player.x_direction = -1;
+            if(!ejected) wasLeft=true;
             console.log('(keydown: left) player.x: ' + player.x);
             console.log('(keydown: left) player.y: ' + player.y);
             console.log('(keydown: left) player.x_direction: ' + player.x_direction);
@@ -164,6 +182,7 @@ function eventHandler() {
         } 
         if (event.keyCode == 39) { // right
             player.x_direction = 1;
+            if (!ejected) wasLeft=false;
             console.log('(keydown: right) player.x: ' + player.x);
             console.log('(keydown: right) player.y: ' + player.y);
             console.log('(keydown: right) player.x_direction: ' + player.x_direction);
@@ -178,6 +197,7 @@ function eventHandler() {
         if (event.keyCode == 37) { // left
             if (player.x_direction == 1) return;
             player.x_direction = 0;
+            if(!ejected) wasLeft=true;
             console.log('(keyup: left) player.x: ' + player.x);
             console.log('(keyup: left) player.y: ' + player.y);
             console.log('(keyup: left) player.x_direction: ' + player.x_direction);
@@ -190,6 +210,7 @@ function eventHandler() {
         if (event.keyCode == 39) { // right
             if (player.x_direction == -1) return;
             player.x_direction = 0;
+            if (!ejected) wasLeft=false;
             console.log('(keyup: right) player.x: ' + player.x);
             console.log('(keyup: right) player.y: ' + player.y);
             console.log('(keyup: right) player.x_direction: ' + player.x_direction);
@@ -202,6 +223,70 @@ function eventHandler() {
     }, false);
 }
 
+class Projectile 
+{
+    constructor(x,y,w,h)
+    {
+        this.x=x;
+        this.y=y;
+        this.w=w;
+        this.h=h;
+    }
+
+    draw()
+    {
+        ctx.drawImage(neutralInteractable, 0, 0, 16, 16, this.x, this.y, this.w, this.h);
+     
+    }
+    stay() //lock to the player
+    {
+        if(!this.eject())
+        {
+          
+          if(wasLeft) // stay to the left of the player 
+          {this.x=player.x-10; 
+            this.y=player.y;
+        }
+          else if(!wasLeft) // stay to the right of the player
+          {this.x=player.x+15; 
+            this.y=player.y;
+        }
+        
+        }
+        else //if ejected 
+        {
+            if (wasLeft) //if player was facing left projectile fires left
+            {
+                this.x-=8;
+            }
+            if(!wasLeft)
+            {
+                this.x+=8;
+            }
+        }
+   
+    }
+    eject()
+    {    
+        if (!ejected)
+        return false
+        if (ejected)   
+        return true      
+    }
+     reset() //reset currently called in recurring, can be made to be called when hitting enemy
+     {
+         if (this.x>600 || this.x < -100) //when projectile goes out of bounds
+         {
+             ejected=false;
+           //  if (player.x_direction==1)
+            // wasLeft=false;
+            // else if(player.x_direction==-1)
+            // wasLeft=true;
+         }
+     }
+}
+
+projectile = new Projectile(10,10,10,10)
 function recurring() {
     game.drawCanvas();
     game.drawTiles();
@@ -209,8 +294,14 @@ function recurring() {
     itrct2.draw();
     itrct3.draw();
     player.draw();
+    projectile.stay();
+    projectile.draw()
+    projectile.reset();
+    
     player.move();
     player.processGravity();
+    
+
 }
 setInterval(recurring, 1000 / 60);
 eventHandler();
