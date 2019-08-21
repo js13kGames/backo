@@ -11,23 +11,33 @@ var ejected = false;
 var wasLeft = false;
 //
 //canvas variables
+var width=500
+var height=500 
+
 var tiles = [];
-var tilesRunDown = false;
+for (var i = 0; i < 500; i += 25) {
+    tiles.push([i, 475]);
+}
+var firstTile = tiles[0];
+tiles.push([firstTile[0]-25,475]);
+
 var baseTile = new Image();
 baseTile.src = "../js13kgames_entry/tiles/1.png";
+var baseTile2 = new Image();
+baseTile.src = "../js13kgames_entry/tiles/2.png";
 var hostileInteractable = new Image();
 hostileInteractable.src = "../js13kgames_entry/tiles/hostile.png";
 var neutralInteractable = new Image();
 neutralInteractable.src = "../js13kgames_entry/tiles/neutral.png";
 var beneficialInteractable = new Image();
 beneficialInteractable.src = "../js13kgames_entry/tiles/beneficial.png";
-//
-
 
 class Game {
     constructor(status, gravity) {
         this.gravity = gravity;
         this.status = status; // 0 intro, 1 menu (selection), 2 gameplay, 3 menu during gameplay
+        this.leftArr = false;
+        this.rightArr = false;
     }
 
     drawCanvas() {
@@ -39,11 +49,18 @@ class Game {
     }
     
     drawTiles() { 
-        for (var i = 0; i < 500; i += 25) {
-            ctx.drawImage(baseTile, 0, 0, 16, 16, i, 475, 25, 25);
-            if (!tilesRunDown) tiles.push([i, 475]);
-        }
-        tilesRunDown = true;
+        var random;
+        if(this.leftArr){
+            var lastTile = tiles[tiles.length-1];
+            tiles.push([lastTile[0]-25,475]); 
+            // console.log(tiles);
+            for (var i=0;i<tiles.length;i++){
+                ctx.drawImage(baseTile, 0, 0, 16, 16, tiles[i][0], tiles[i][1], 25, 25);
+                tiles[i][0]+=5
+            }
+        } else
+            for (var i=0;i<tiles.length;i++)
+                ctx.drawImage(baseTile, 0, 0, 16, 16, tiles[i][0], tiles[i][1], 25, 25);
     }
 }
 game = new Game(2, true);
@@ -95,36 +112,15 @@ class Player {
 
     move() {
         if (this.y_direction == 1) {
-            console.log('(moving up) player.jY: ' + this.jY);
-            console.log('(moving up) player.x: ' + this.x);
-            console.log('(moving up) player.y: ' + this.y);
-            console.log('(moving up) player.x_direction: ' + this.x_direction);
-            console.log('(moving up) player.y_direction: ' + this.y_direction);
-            console.log('(moving up) player.verticalCollision: ' + this.verticalCollision());
-            console.log('(moving up) player.horizontalCollision: ' + this.horizontalCollision());
-            console.log('(moving up) game.gravity: ' + game.gravity);
-            console.log('---------------------------------------');
             if (this.jY == 80) {
                 this.y_direction = -1;
                 game.gravity = true;
-                console.log('(after max jump Y reached) player.jY: ' + this.jY);
-                console.log('(after max jump Y reached) player.x: ' + this.x);
-                console.log('(after max jump Y reached) player.y: ' + this.y);
-                console.log('(after max jump Y reached) player.x_direction: ' + this.x_direction);
-                console.log('(after max jump Y reached) player.y_direction: ' + this.y_direction);
-                console.log('(after max jump Y reached) player.verticalCollision: ' + this.verticalCollision());
-                console.log('(after max jump Y reached) player.horizontalCollision: ' + this.horizontalCollision());
-                console.log('(after max jump Y reached) game.gravity: ' + game.gravity);
-                console.log('---------------------------------------');
                 return;
             }
             this.y -= 10;
             this.jY += 10;
         }
-        if (this.x_direction == -1 && this.horizontalCollision() != 'left') 
-            this.x -= playerVelocityX;
-        if (this.x_direction == 1 && this.horizontalCollision() != 'right') 
-            this.x += playerVelocityX;
+
     }
 
     verticalCollision() {
@@ -152,7 +148,7 @@ class Player {
         }
     }
 }
-player = new Player(100, 0, 250, 450, 15, 30);
+player = new Player(100, 0, 450, 450, 15, 30);
 
 function eventHandler() {
     window.addEventListener('keydown', function(event) {
@@ -169,56 +165,24 @@ function eventHandler() {
             ejected=true;      
         }
         if (event.keyCode == 37) { // left
-            player.x_direction = -1;
+            game.leftArr = true;
             if(!ejected) wasLeft=true;
-            console.log('(keydown: left) player.x: ' + player.x);
-            console.log('(keydown: left) player.y: ' + player.y);
-            console.log('(keydown: left) player.x_direction: ' + player.x_direction);
-            console.log('(keydown: left) player.y_direction: ' + player.y_direction);
-            console.log('(keydown: left) player.verticalCollision: ' + player.verticalCollision());
-            console.log('(keydown: left) player.horizontalCollision: ' + player.horizontalCollision());
-            console.log('(keydown: left) game.gravity: ' + game.gravity);
-            console.log('---------------------------------------');
         } 
         if (event.keyCode == 39) { // right
-            player.x_direction = 1;
+            game.rightArr = true;
             if (!ejected) wasLeft=false;
-            console.log('(keydown: right) player.x: ' + player.x);
-            console.log('(keydown: right) player.y: ' + player.y);
-            console.log('(keydown: right) player.x_direction: ' + player.x_direction);
-            console.log('(keydown: right) player.y_direction: ' + player.y_direction);
-            console.log('(keydown: right) player.verticalCollision: ' + player.verticalCollision());
-            console.log('(keydown: right) player.horizontalCollision: ' + player.horizontalCollision());
-            console.log('(keydown: right) game.gravity: ' + game.gravity);
-            console.log('---------------------------------------');
         } 
     }, false);
     window.addEventListener('keyup', function(event) {
         if (event.keyCode == 37) { // left
             if (player.x_direction == 1) return;
-            player.x_direction = 0;
+            game.leftArr = false;
             if(!ejected) wasLeft=true;
-            console.log('(keyup: left) player.x: ' + player.x);
-            console.log('(keyup: left) player.y: ' + player.y);
-            console.log('(keyup: left) player.x_direction: ' + player.x_direction);
-            console.log('(keyup: left) player.y_direction: ' + player.y_direction);
-            console.log('(keyup: left) player.verticalCollision: ' + player.verticalCollision());
-            console.log('(keyup: left) player.horizontalCollision: ' + player.horizontalCollision());
-            console.log('(keyup: left) game.gravity: ' + game.gravity);
-            console.log('---------------------------------------');
         } 
         if (event.keyCode == 39) { // right
             if (player.x_direction == -1) return;
-            player.x_direction = 0;
+            game.rightArr = false;
             if (!ejected) wasLeft=false;
-            console.log('(keyup: right) player.x: ' + player.x);
-            console.log('(keyup: right) player.y: ' + player.y);
-            console.log('(keyup: right) player.x_direction: ' + player.x_direction);
-            console.log('(keyup: right) player.y_direction: ' + player.y_direction);
-            console.log('(keyup: right) player.verticalCollision: ' + player.verticalCollision());
-            console.log('(keyup: right) player.horizontalCollision: ' + player.horizontalCollision());
-            console.log('(keyup: right) game.gravity: ' + game.gravity);
-            console.log('---------------------------------------');
         } 
     }, false);
 }
@@ -297,11 +261,8 @@ function recurring() {
     projectile.stay();
     projectile.draw()
     projectile.reset();
-    
     player.move();
     player.processGravity();
-    
-
 }
 setInterval(recurring, 1000 / 60);
 eventHandler();
