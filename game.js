@@ -6,10 +6,9 @@ var playerVelocityX = 5;
 var gravityValue = 10;
 
 //
-//projectile params
-var ejected = false;
-var wasLeft = false;
-//
+
+//Moved projectile parameters into the projectile class.
+
 //canvas variables
 var width=500
 var height=500 
@@ -49,8 +48,7 @@ class Game {
     }
     
     drawTiles() { 
-        var random;
-        if(this.leftArr){
+        if(this.leftArr && !randomTile.hitPlayer){      //now stops moving when playa is hit by obstacle
             var lastTile = tiles[tiles.length-1];
             tiles.push([lastTile[0]-25,475]); 
             // console.log(tiles);
@@ -162,27 +160,27 @@ function eventHandler() {
         }
         if (event.keyCode == 32) // space
         {
-            ejected=true;      
+            projectile.ejected=true;      
         }
         if (event.keyCode == 37) { // left
             game.leftArr = true;
-            if(!ejected) wasLeft=true;
+            if(!projectile.ejected) projectile.wasLeft=true;
         } 
         if (event.keyCode == 39) { // right
             game.rightArr = true;
-            if (!ejected) wasLeft=false;
+            if (!projectile.ejected) projectile.wasLeft=false;
         } 
     }, false);
     window.addEventListener('keyup', function(event) {
         if (event.keyCode == 37) { // left
             if (player.x_direction == 1) return;
             game.leftArr = false;
-            if(!ejected) wasLeft=true;
+            if(!projectile.ejected) projectile.wasLeft=true;
         } 
         if (event.keyCode == 39) { // right
             if (player.x_direction == -1) return;
             game.rightArr = false;
-            if (!ejected) wasLeft=false;
+            if (!projectile.ejected) projectile.wasLeft=false;
         } 
     }, false);
 }
@@ -195,6 +193,8 @@ class Projectile
         this.y=y;
         this.w=w;
         this.h=h;
+        this.ejected = false;
+        this.wasLeft = false; //refers to player
     }
 
     draw()
@@ -207,11 +207,11 @@ class Projectile
         if(!this.eject())
         {
           
-          if(wasLeft) // stay to the left of the player 
+          if(this.wasLeft) // stay to the left of the player 
           {this.x=player.x-10; 
             this.y=player.y;
         }
-          else if(!wasLeft) // stay to the right of the player
+          else if(!this.wasLeft) // stay to the right of the player
           {this.x=player.x+15; 
             this.y=player.y;
         }
@@ -219,11 +219,11 @@ class Projectile
         }
         else //if ejected 
         {
-            if (wasLeft) //if player was facing left projectile fires left
+            if (this.wasLeft) //if player was facing left projectile fires left
             {
                 this.x-=8;
             }
-            if(!wasLeft)
+            if(!this.wasLeft)
             {
                 this.x+=8;
             }
@@ -232,16 +232,16 @@ class Projectile
     }
     eject()
     {    
-        if (!ejected)
+        if (!this.ejected)
         return false
-        if (ejected)   
+        if (this.ejected)   
         return true      
     }
      reset() //reset currently called in recurring, can be made to be called when hitting enemy
      {
          if (this.x>600 || this.x < -100) //when projectile goes out of bounds
          {
-             ejected=false;
+             this.ejected=false;
            //  if (player.x_direction==1)
             // wasLeft=false;
             // else if(player.x_direction==-1)
@@ -250,7 +250,62 @@ class Projectile
      }
 }
 
-projectile = new Projectile(10,10,10,10)
+projectile = new Projectile(10,10,10,10);
+
+class RandomTile
+{
+    constructor(w,tile)
+    {
+        this.x=0;
+        this.w=w;
+        this.h=(Math.random()*55)+25; // random object height
+        this.y=475-(this.h/2); //makes sure object is always above ground
+        this.tile=tile;
+        this.random=0;
+        this.appear = false;
+        this.hitPlayer = false;
+    }
+
+    decideIfAppear() 
+    { 
+        if(game.leftArr)
+        this.random=Math.random()*101;
+        if(this.random>95) //appear if true
+        {
+            this.appear=true;
+        }
+        if(this.appear)
+        {
+            this.appearnow();
+        }
+    }
+     
+    appearnow()
+    {        
+        ctx.drawImage(this.tile,this.x,this.y,this.w,this.h);
+           
+        if (game.leftArr && !this.hitPlayer) // if game is scrolling and player is not hit
+            {
+            this.x+=5; //tile moves weee
+            // console.log(this.y);
+            }
+        if(this.x>600) //reset when going off screen
+            {
+            this.appear=false; //appearn() will stop being called
+            this.x=0; // reset at original position on the left
+            this.h=(Math.random()*55)+25; //new object height
+            this.y=475-(this.h/2); //adjust y to new height
+            }
+        if (Math.abs(this.x-player.x)==5) //when player and object collide on x axis
+            {
+        if(player.y+player.h/2>(this.y-this.h/2))  // if player isnt in the air over the obstacle
+            this.hitPlayer=true;
+               
+        else this.hitPlayer=false;
+            }    
+    }
+}
+randomTile = new RandomTile(6,baseTile);
 function recurring() {
     game.drawCanvas();
     game.drawTiles();
@@ -258,6 +313,7 @@ function recurring() {
     itrct2.draw();
     itrct3.draw();
     player.draw();
+    randomTile.decideIfAppear();
     projectile.stay();
     projectile.draw()
     projectile.reset();
