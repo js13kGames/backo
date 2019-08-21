@@ -1,69 +1,216 @@
-var canvas = document.getElementById('game')
-var ctx = canvas.getContext('2d')
-var leftArr = false;
-var rightArr = false;
+var canvas = document.getElementById('game');
+var ctx = canvas.getContext('2d');
+
+var tiles = [];
+var tilesRunDown = false;
+var baseTile = new Image();
+baseTile.src = "../js13kgames_entry/tiles/1.png";
+var hostileInteractable = new Image();
+hostileInteractable.src = "../js13kgames_entry/tiles/hostile.png";
+var neutralInteractable = new Image();
+neutralInteractable.src = "../js13kgames_entry/tiles/neutral.png";
+var beneficialInteractable = new Image();
+beneficialInteractable.src = "../js13kgames_entry/tiles/beneficial.png";
+
+
+class Game {
+    constructor(status, gravity) {
+        this.gravity = gravity;
+        this.status = status; // 0 intro, 1 menu (selection), 2 gameplay, 3 menu during gameplay
+    }
+
+    drawCanvas() {
+        var my_gradient = ctx.createLinearGradient(0, 0, 0, 320);
+        my_gradient.addColorStop(0, "darkblue");
+        my_gradient.addColorStop(1, "lightblue");
+        ctx.fillStyle = my_gradient;
+        ctx.fillRect(0, 0, 500, 500);
+    }
+    
+    drawTiles() { 
+        for (var i = 0; i < 500; i += 25) {
+            ctx.drawImage(baseTile, 0, 0, 16, 16, i, 475, 25, 25);
+            if (!tilesRunDown) tiles.push([i, 475]);
+        }
+        tilesRunDown = true;
+    }
+}
+game = new Game(2, true);
+
+class Interactable {
+    constructor(status) {
+        this.x = parseInt(Math.random() * (400 - 100) + 100);
+        this.y = parseInt(Math.random() * (400 - 100) + 100);
+        this.status = status; // beneficial, neutral, hostile
+    }
+
+    draw() {
+        if (this.status == 'hostile') ctx.drawImage(hostileInteractable, 0, 0, 16, 16, this.x, this.y, 16, 16);
+        if (this.status == 'netural') ctx.drawImage(neutralInteractable, 0, 0, 16, 16, this.x, this.y, 16, 16);
+        if (this.status == 'beneficial') ctx.drawImage(beneficialInteractable, 0, 0, 16, 16, this.x, this.y, 16, 16);
+    }
+
+    activate() {
+
+    }
+
+    deactivate() {
+
+    }
+}
+
+itrct1 = new Interactable('hostile');
+itrct2 = new Interactable('netural');
+itrct3 = new Interactable('beneficial');
 
 class Player {
-	constructor(x,y,w,h,sprite){
-		this.x=x
-		this.y=y
-		this.w=w;
-		this.h=h
-		this.sprite=sprite
-	}
-	draw(){
-		ctx.fillStyle='white';
-		ctx.fillRect(this.x,this.y,this.w,this.h);
-	}
-	move(){
-		if (leftArr)
-			this.x-=5;
-		if (rightArr)
-			this.x+=5;
-	}
+    constructor(health, shield, x, y, w, h) {
+        this.health = health;
+        this.shield = shield;
+        this.x_direction = 0; // -1: left, 0: none, 1: right
+        this.y_direction = 0; // -1: downwards, 0: none, 1: upwards
+        this.x = x;
+        this.y = y;
+        this.w = w;
+        this.h = h;
+        this.jY = 0; // how far up is the player from his initial Y before jumping
+    }
 
-}
-player = new Player(400,270,30,30);
+    draw() {
+        ctx.fillStyle = 'gray';
+        ctx.fillRect(this.x, this.y, this.w, this.h);
+    }
 
-function drawCanvas(){
-	ctx.fillStyle='lightblue'
-	ctx.fillRect(0,0,500,500)
-}
-function drawTiles(){
-	var leftDown=new Image();
-	leftDown.src = "C:/Users/smook/Desktop/js13kgames/tiles/down-left.png"
-	var rightDown=new Image();
-	rightDown.src = "C:/Users/smook/Desktop/js13kgames/tiles/down-right.png"
-	var middleDown=new Image();
-	middleDown.src = "C:/Users/smook/Desktop/js13kgames/tiles/down-middle.png"
+    move() {
+        if (this.y_direction == 1) {
+            console.log('(moving up) player.jY: ' + this.jY);
+            console.log('(moving up) player.x: ' + this.x);
+            console.log('(moving up) player.y: ' + this.y);
+            console.log('(moving up) player.x_direction: ' + this.x_direction);
+            console.log('(moving up) player.y_direction: ' + this.y_direction);
+            console.log('(moving up) player.verticalCollision: ' + this.verticalCollision());
+            console.log('(moving up) player.horizontalCollision: ' + this.horizontalCollision());
+            console.log('(moving up) game.gravity: ' + game.gravity);
+            console.log('---------------------------------------');
+            if (this.jY == 80) {
+                this.y_direction = -1;
+                game.gravity = true;
+                console.log('(after max jump Y reached) player.jY: ' + this.jY);
+                console.log('(after max jump Y reached) player.x: ' + this.x);
+                console.log('(after max jump Y reached) player.y: ' + this.y);
+                console.log('(after max jump Y reached) player.x_direction: ' + this.x_direction);
+                console.log('(after max jump Y reached) player.y_direction: ' + this.y_direction);
+                console.log('(after max jump Y reached) player.verticalCollision: ' + this.verticalCollision());
+                console.log('(after max jump Y reached) player.horizontalCollision: ' + this.horizontalCollision());
+                console.log('(after max jump Y reached) game.gravity: ' + game.gravity);
+                console.log('---------------------------------------');
+                return;
+            }
+            this.y -= 10;
+            this.jY += 10;
+        }
+        if (this.x_direction == -1 && this.horizontalCollision() != 'left') 
+            this.x -= 10;
+        if (this.x_direction == 1 && this.horizontalCollision() != 'right') 
+            this.x += 10;
+    }
 
-	ctx.drawImage(leftDown,0,0,16,16,0,300,25,25);
-	ctx.drawImage(rightDown,0,0,16,16,475,300,25,25)
-	for(var i=25;i<475;i+=25){
-		ctx.drawImage(middleDown,0,0,16,16,i,300,25,25);
-	}
+    verticalCollision() {
+        // Tiles, -y collision
+        for (var x = 0; x < tiles.length; x++)
+            if (this.y + this.h - 5 == tiles[x][1])
+                return true;
+        return false;
+    }
+
+    horizontalCollision() {
+        // Canvas Collision
+        if (this.x + this.w + 1 > 500)
+            return 'right';
+        if (this.x - 1 < 0)
+            return 'left';
+        return 'none';
+    }
+
+    processGravity() {
+        if (!this.verticalCollision() && game.gravity) {
+            this.y += 10;
+            this.jY -= 10;
+            if (this.jY == 0) this.y_direction = 0;
+        }
+    }
 }
-function eventHandler(){
-	window.addEventListener('keydown', function(event){
-		 if(event.keyCode == 37) // left
-		 	leftArr = true
-	     if(event.keyCode == 39) // right
-	     	rightArr = true
-	},false);
-	window.addEventListener('keyup', function(event){
-		if(event.keyCode == 37) // left
-		 	leftArr = false
-	     if(event.keyCode == 39) // right
-	     	rightArr = false
-	},false)
+player = new Player(100, 0, 250, 450, 15, 30);
+
+function eventHandler() {
+    window.addEventListener('keydown', function(event) {
+        if (event.keyCode == 38) // up
+        {
+            if (player.jY == 0) {
+                player.y_direction = 1;
+                game.gravity = false;
+            }
+        }
+        if (event.keyCode == 37) { // left
+            player.x_direction = -1;
+            console.log('(keydown: left) player.x: ' + player.x);
+            console.log('(keydown: left) player.y: ' + player.y);
+            console.log('(keydown: left) player.x_direction: ' + player.x_direction);
+            console.log('(keydown: left) player.y_direction: ' + player.y_direction);
+            console.log('(keydown: left) player.verticalCollision: ' + player.verticalCollision());
+            console.log('(keydown: left) player.horizontalCollision: ' + player.horizontalCollision());
+            console.log('(keydown: left) game.gravity: ' + game.gravity);
+            console.log('---------------------------------------');
+        } 
+        if (event.keyCode == 39) { // right
+            player.x_direction = 1;
+            console.log('(keydown: right) player.x: ' + player.x);
+            console.log('(keydown: right) player.y: ' + player.y);
+            console.log('(keydown: right) player.x_direction: ' + player.x_direction);
+            console.log('(keydown: right) player.y_direction: ' + player.y_direction);
+            console.log('(keydown: right) player.verticalCollision: ' + player.verticalCollision());
+            console.log('(keydown: right) player.horizontalCollision: ' + player.horizontalCollision());
+            console.log('(keydown: right) game.gravity: ' + game.gravity);
+            console.log('---------------------------------------');
+        } 
+    }, false);
+    window.addEventListener('keyup', function(event) {
+        if (event.keyCode == 37) { // left
+            if (player.x_direction == 1) return;
+            player.x_direction = 0;
+            console.log('(keyup: left) player.x: ' + player.x);
+            console.log('(keyup: left) player.y: ' + player.y);
+            console.log('(keyup: left) player.x_direction: ' + player.x_direction);
+            console.log('(keyup: left) player.y_direction: ' + player.y_direction);
+            console.log('(keyup: left) player.verticalCollision: ' + player.verticalCollision());
+            console.log('(keyup: left) player.horizontalCollision: ' + player.horizontalCollision());
+            console.log('(keyup: left) game.gravity: ' + game.gravity);
+            console.log('---------------------------------------');
+        } 
+        if (event.keyCode == 39) { // right
+            if (player.x_direction == -1) return;
+            player.x_direction = 0;
+            console.log('(keyup: right) player.x: ' + player.x);
+            console.log('(keyup: right) player.y: ' + player.y);
+            console.log('(keyup: right) player.x_direction: ' + player.x_direction);
+            console.log('(keyup: right) player.y_direction: ' + player.y_direction);
+            console.log('(keyup: right) player.verticalCollision: ' + player.verticalCollision());
+            console.log('(keyup: right) player.horizontalCollision: ' + player.horizontalCollision());
+            console.log('(keyup: right) game.gravity: ' + game.gravity);
+            console.log('---------------------------------------');
+        } 
+    }, false);
 }
 
-
-function game(){
-	drawCanvas();
-	drawTiles();
-	player.draw();
-	player.move();
+function recurring() {
+    game.drawCanvas();
+    game.drawTiles();
+    itrct1.draw();
+    itrct2.draw();
+    itrct3.draw();
+    player.draw();
+    player.move();
+    player.processGravity();
 }
-setInterval(game,1000/60);
+setInterval(recurring, 1000 / 60);
 eventHandler();
