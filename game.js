@@ -24,6 +24,12 @@ var baseTile = new Image();
 baseTile.src = "../js13kgames_entry/tiles/1.png";
 var baseTile2 = new Image();
 baseTile.src = "../js13kgames_entry/tiles/2.png";
+
+var openingSlopeTile= new Image();
+openingSlopeTile.src = "../js13kgames_entry/tiles/3.png";
+var closingSlopeTile = new Image();
+closingSlopeTile.src = "../js13kgames_entry/tiles/4.png";
+
 var hostileInteractable = new Image();
 hostileInteractable.src = "../js13kgames_entry/tiles/hostile.png";
 var neutralInteractable = new Image();
@@ -37,6 +43,7 @@ class Game {
         this.status = status; // 0 intro, 1 menu (selection), 2 gameplay, 3 menu during gameplay
         this.leftArr = false;
         this.rightArr = false;
+        this.slope = false;
     }
 
     drawCanvas() {
@@ -56,10 +63,37 @@ class Game {
                 ctx.drawImage(baseTile, 0, 0, 16, 16, tiles[i][0], tiles[i][1], 25, 25);
                 tiles[i][0]+=5
             }
+
+            var slopeChance = Math.random();            // 1% chance of getting a slope
+            if (slopeChance <= 0.01){
+                this.slope = true;
+                console.log("SLOPE ACTIVATED")
+                // this.drawSlope();
+
+            }
+
         } else
             for (var i=0;i<tiles.length;i++)
                 ctx.drawImage(baseTile, 0, 0, 16, 16, tiles[i][0], tiles[i][1], 25, 25);
     }
+
+    // drawSlope(){
+    //     var lengthSlope = Math.floor(Math.random() * (7-3) + 3);
+    //     var heightSlope = Math.floor(Math.random() * (3-1) + 1);
+    //     var x = 475
+    //     console.log("Slope with length " + lengthSlope + " and height " + heightSlope + " initialized")
+    //     for(var i = 0; i<=heightSlope; i++){
+    //         tiles.push([-25,x]);
+    //         x-=25;
+    //     }
+    //     for(var i = tiles.length - 1- lengthSlope; i >= tiles.length - (lengthSlope + heightSlope); i--)
+    //         ctx.drawImage(openingSlopeTile, 0, 0, 16, 16, tiles[i][0], tiles[i][1], 25, 25);
+
+    //     var lastUpperTile = tiles[tiles.length-1];
+    //     lastUpperTile[0]-=25;
+
+       
+    // }       
 }
 game = new Game(2, true);
 
@@ -148,43 +182,6 @@ class Player {
 }
 player = new Player(100, 0, 450, 450, 15, 30);
 
-function eventHandler() {
-    window.addEventListener('keydown', function(event) {
-        if (event.keyCode == 38) // up
-        {
-            if (player.jY <= 0) {
-                player.jY = 0;
-                player.y_direction = 1;
-                game.gravity = false;
-            }
-        }
-        if (event.keyCode == 32) // space
-        {
-            projectile.ejected=true;      
-        }
-        if (event.keyCode == 37) { // left
-            game.leftArr = true;
-            if(!projectile.ejected) projectile.wasLeft=true;
-        } 
-        if (event.keyCode == 39) { // right
-            game.rightArr = true;
-            if (!projectile.ejected) projectile.wasLeft=false;
-        } 
-    }, false);
-    window.addEventListener('keyup', function(event) {
-        if (event.keyCode == 37) { // left
-            if (player.x_direction == 1) return;
-            game.leftArr = false;
-            if(!projectile.ejected) projectile.wasLeft=true;
-        } 
-        if (event.keyCode == 39) { // right
-            if (player.x_direction == -1) return;
-            game.rightArr = false;
-            if (!projectile.ejected) projectile.wasLeft=false;
-        } 
-    }, false);
-}
-
 class Projectile 
 {
     constructor(x,y,w,h)
@@ -206,36 +203,28 @@ class Projectile
     {
         if(!this.eject())
         {
-          
-          if(this.wasLeft) // stay to the left of the player 
-          {this.x=player.x-10; 
-            this.y=player.y;
-        }
-          else if(!this.wasLeft) // stay to the right of the player
-          {this.x=player.x+15; 
-            this.y=player.y;
-        }
-        
+            if(this.wasLeft) {    // stay to the left of the player  
+                this.x=player.x-10; 
+                this.y=player.y;
+            }
+            else if(!this.wasLeft) {
+                this.x=player.x+15;  // stay to the right of the player
+                this.y=player.y;
+            }
         }
         else //if ejected 
         {
             if (this.wasLeft) //if player was facing left projectile fires left
-            {
                 this.x-=8;
-            }
             if(!this.wasLeft)
-            {
                 this.x+=8;
-            }
         }
    
     }
     eject()
     {    
-        if (!this.ejected)
-        return false
-        if (this.ejected)   
-        return true      
+        if (!this.ejected) return false
+        if (this.ejected) return true      
     }
      reset() //reset currently called in recurring, can be made to be called when hitting enemy
      {
@@ -249,7 +238,6 @@ class Projectile
          }
      }
 }
-
 projectile = new Projectile(10,10,10,10);
 
 class RandomTile
@@ -306,6 +294,45 @@ class RandomTile
     }
 }
 randomTile = new RandomTile(6,baseTile);
+
+function eventHandler() {
+    window.addEventListener('keydown', function(event) {
+        if (event.keyCode == 38) // up
+        {
+            if (player.jY <= 0) {
+                player.jY = 0;
+                player.y_direction = 1;
+                game.gravity = false;
+            }
+        }
+        if (event.keyCode == 32) // space
+        {
+            projectile.ejected=true;      
+        }
+        if (event.keyCode == 37) { // left
+            game.leftArr = true;
+            if(!projectile.ejected) projectile.wasLeft=true;
+        } 
+        if (event.keyCode == 39) { // right
+            game.rightArr = true;
+            if (!projectile.ejected) projectile.wasLeft=false;
+        } 
+    }, false);
+    window.addEventListener('keyup', function(event) {
+        if (event.keyCode == 37) { // left
+            if (player.x_direction == 1) return;
+            game.leftArr = false;
+            if(!projectile.ejected) projectile.wasLeft=true;
+        } 
+        if (event.keyCode == 39) { // right
+            if (player.x_direction == -1) return;
+            game.rightArr = false;
+            if (!projectile.ejected) projectile.wasLeft=false;
+        } 
+    }, false);
+}
+
+
 function recurring() {
     game.drawCanvas();
     game.drawTiles();
@@ -319,6 +346,7 @@ function recurring() {
     projectile.reset();
     player.move();
     player.processGravity();
+    
 }
 setInterval(recurring, 1000 / 60);
 eventHandler();
