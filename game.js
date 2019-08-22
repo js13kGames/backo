@@ -190,6 +190,7 @@ class Projectile
         this.h=h;
         this.ejected = false;
         this.wasLeft = false; //refers to player
+        this.hitEnemy=false;
     }
 
     draw()
@@ -212,10 +213,13 @@ class Projectile
         }
         else //if ejected 
         {
-            if (this.wasLeft) //if player was facing left projectile fires left
+           
+                if (this.wasLeft) //if player was facing left projectile fires left
                 this.x-=8;
             if(!this.wasLeft)
                 this.x+=8;
+            
+          
         }
    
     }
@@ -226,9 +230,12 @@ class Projectile
     }
      reset() //reset currently called in recurring, can be made to be called when hitting enemy
      {
-         if (this.x>600 || this.x < -100) //when projectile goes out of bounds
+         if (this.x>600 || this.x < -100 || this.hitEnemy==true) //when projectile goes out of bounds
          {
-             this.ejected=false;
+             this.x=-100;
+            this.ejected=false;
+             this.hitEnemy=false;
+            
            //  if (player.x_direction==1)
             // wasLeft=false;
             // else if(player.x_direction==-1)
@@ -350,6 +357,94 @@ function eventHandler() {
     }, false);
 }
 
+class Enemy
+{
+    constructor(x,y,w,h)
+    {
+        this.x=x;
+        this.y=y;
+        this.w=w;
+        this.h=h;
+        this.life=2;
+        this.dead=false;
+        this.verticalCollision=false;
+    }
+
+    draw ()
+    {
+        ctx.fillStyle='black';
+        ctx.fillRect(this.x,this.y,this.w,this.h)
+    }
+    fall()
+    {
+        if(!this.verticalCollision && !this.playerWasOnTop) //Fall if player not on ground or on top of object
+        {
+            this.y+=5;
+        }
+        if(this.y>=445+(30-this.h)) //stop falling if on ground or on object
+        this.verticalCollision=true;
+        else this.verticalCollision=false;
+    }
+    move()
+    {
+        if(game.leftArr && !randomTile.hitPlayer)
+        {
+            this.x+=5;
+            console.log('asd');
+        }
+    }
+    gothit()
+    {
+        if(Math.abs(projectile.x-this.x)<30 && Math.abs(projectile.y-this.y) <30 && projectile.hitEnemy==false)
+        {
+            
+            projectile.hitEnemy=true;
+            console.log('hit');
+            this.life--;
+            if(this.life==1)
+        {
+            this.h /=2;
+            this.w /=2;
+            this.y -=50;
+        }
+        }
+        
+        if(this.life==0)
+        {
+            this.dead=true;
+        }
+    }
+}
+
+enemy = new Enemy(150,350,30,30)
+
+//Functions containing class function exec order
+function EnemyThings()
+{
+    if(!enemy.dead)
+    {
+    enemy.draw();
+    enemy.fall();
+    enemy.move();
+    enemy.gothit();
+    }
+}
+
+function ProjectileDoesThings()
+{
+    projectile.stay();
+    projectile.draw()
+    projectile.reset();
+}
+
+function PlayerDoesThings() {
+    player.draw();
+    player.fall();
+    player.jump();
+}
+//
+
+
 
 function recurring() {
     game.drawCanvas();
@@ -357,17 +452,12 @@ function recurring() {
     itrct1.draw();
     itrct2.draw();
     itrct3.draw();
-    player.draw();
     randomTile.decideIfAppear();
     randomTile.playerOnTop();
-    player.fall();
-    player.jump();
-    projectile.stay();
-    projectile.draw()
-    projectile.reset();
-    
-
-    
+    PlayerDoesThings();
+    EnemyThings();
+    ProjectileDoesThings();
 }
 setInterval(recurring, 1000 / 60);
 eventHandler();
+
