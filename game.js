@@ -6,7 +6,7 @@ var playerVelocityX = 5;
 var gravityValue = 10;
 
 //
-
+var upArr=false;
 //Moved projectile parameters into the projectile class.
 
 //canvas variables
@@ -133,7 +133,11 @@ class Player {
         this.y = y;
         this.w = w;
         this.h = h;
-        this.jY = 0; // how far up is the player from his initial Y before jumping
+        this.jumpForce=15; //jump speed
+        this.verticalCollision=false;
+        this.horizontalCollision=false;
+        this.oldY=0; //save Y before jumping
+        this.jumpHeight=90; //how high should the player go from jump point - must be divisible by this.jumpforce
         
     }
 
@@ -142,45 +146,39 @@ class Player {
         ctx.fillRect(this.x, this.y, this.w, this.h);
     }
 
-    move() {
-        if (this.y_direction == 1) {
-            if (this.jY == 80) {
-                this.y_direction = -1;
-                game.gravity = true;
-                return;
+    jump()
+    {
+        if (upArr && this.verticalCollision)
+        {
+            player.oldY+=this.jumpForce
+            this.y-=this.jumpForce;
+            console.log(this.y);
+        }
+  
+    }
+
+    fall() 
+    {
+        if(!this.verticalCollision && !this.playerWasOnTop) //Fall if player not on ground or on top of object
+        {
+            this.y+=5;
+        }
+        if(this.y>=450 || this.playerWasOnTop) //stop falling if on ground or on object
+        this.verticalCollision=true;
+
+        if (this.oldY==this.jumpHeight) //stop ascending when reaching max jump height
+            {this.verticalCollision=false; upArr=false;
+                this.oldY=0;
             }
-            this.y -= 10;
-            this.jY += 10;
-        }
+       
 
     }
+    
 
-    verticalCollision() {
-        // Tiles, -y collision
-        for (var x = 0; x < tiles.length; x++)
-            if (this.y + this.h - 5 >= tiles[x][1])
-                return true;
-        return false;
+       
     }
 
-    horizontalCollision() {
-        // Canvas Collision
-        if (this.x + this.w > 500)
-            return 'right';
-        if (this.x - 1 < 0)
-            return 'left';
-        return 'none';
-    }
-
-    processGravity() {
-        if (!this.verticalCollision() && game.gravity) {
-            this.y += gravityValue;
-            this.jY -= 10;
-            if (this.jY == 0) this.y_direction = 0;
-        }
-    }
-}
-player = new Player(100, 0, 450, 450, 15, 30);
+player = new Player(100, 0, 450, 420, 20, 30);
 
 class Projectile 
 {
@@ -246,12 +244,13 @@ class RandomTile
     {
         this.x=0;
         this.w=w;
-        this.h=(Math.random()*55)+25; // random object height
-        this.y=475-(this.h/2); //makes sure object is always above ground
+        this.h=30; // random object height
+        this.y=450-(30*(this.h/30-1)); //makes sure object is always above ground
         this.tile=tile;
         this.random=0;
         this.appear = false;
         this.hitPlayer = false;
+        this.playerWasOnTop=false; //tells the player if the player is on top of object
     }
 
     decideIfAppear() 
@@ -267,11 +266,13 @@ class RandomTile
             this.appearnow();
         }
     }
-     
+
     appearnow()
-    {        
+    {       
+        
         ctx.drawImage(this.tile,this.x,this.y,this.w,this.h);
-           
+         
+     
         if (game.leftArr && !this.hitPlayer) // if game is scrolling and player is not hit
             {
             this.x+=5; //tile moves weee
@@ -281,10 +282,10 @@ class RandomTile
             {
             this.appear=false; //appearn() will stop being called
             this.x=0; // reset at original position on the left
-            this.h=(Math.random()*55)+25; //new object height
-            this.y=475-(this.h/2); //adjust y to new height
+            this.h=60; //new object height
+            this.y=450-(30*(this.h/30-1)); //adjust y to new height
             }
-        if (Math.abs(this.x-player.x)==5) //when player and object collide on x axis
+        if (Math.abs(this.x-player.x)==20 && player.x > this.x) //when player and object collide on x axis
             {
         if(player.y+player.h/2>(this.y-this.h/2))  // if player isnt in the air over the obstacle
             this.hitPlayer=true;
@@ -292,18 +293,34 @@ class RandomTile
         else this.hitPlayer=false;
             }    
     }
+
+    playerOnTop()
+    {
+        if (Math.abs(this.y-player.y) ==30 && Math.abs(this.x-player.x)<20)
+        {
+         player.playerWasOnTop=true;
+         console.log('PLAYA');
+        }
+        else if(player.playerWasOnTop)
+        {
+            player.playerWasOnTop=false;
+            upArr=false;
+            player.verticalCollision=false;
+        }
+        
+        
+        
+    }
 }
-randomTile = new RandomTile(6,baseTile);
+randomTile = new RandomTile(20,baseTile);
+
 
 function eventHandler() {
     window.addEventListener('keydown', function(event) {
         if (event.keyCode == 38) // up
         {
-            if (player.jY <= 0) {
-                player.jY = 0;
-                player.y_direction = 1;
-                game.gravity = false;
-            }
+            player.oldY=0;
+           upArr=true;
         }
         if (event.keyCode == 32) // space
         {
@@ -319,6 +336,7 @@ function eventHandler() {
         } 
     }, false);
     window.addEventListener('keyup', function(event) {
+
         if (event.keyCode == 37) { // left
             if (player.x_direction == 1) return;
             game.leftArr = false;
@@ -341,11 +359,14 @@ function recurring() {
     itrct3.draw();
     player.draw();
     randomTile.decideIfAppear();
+    randomTile.playerOnTop();
+    player.fall();
+    player.jump();
     projectile.stay();
     projectile.draw()
     projectile.reset();
-    player.move();
-    player.processGravity();
+    
+
     
 }
 setInterval(recurring, 1000 / 60);
