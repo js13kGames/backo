@@ -356,6 +356,12 @@ class Enemy {
         this.verticalCollision = false;
     }
 
+    head()
+    {
+        ctx.fillStyle = 'black';
+        ctx.fillRect(this.x+this.w/4, this.y-this.w/2, this.w/2, this.h/2)
+    }
+
     draw() {
         ctx.fillStyle = 'black';
         ctx.fillRect(this.x, this.y, this.w, this.h)
@@ -420,6 +426,7 @@ function SlideBackWhenHit(callback, delay, repetitions) {
 function EnemyThings() {
     if (!enemy.dead) {
         enemy.draw();
+        enemy.head();
         enemy.fall();
         enemy.move();
         enemy.gothit();
