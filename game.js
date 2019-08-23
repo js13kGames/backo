@@ -242,7 +242,7 @@ projectile = new Projectile(10, 10, 10, 10);
 
 class RandomTile {
     constructor(w, tile) {
-        this.x = 0;
+        this.x = -100;
         this.w = w;
         this.h = 40; // random object height
         this.y = 450 - (30 * (this.h / 30 - 1)); //makes sure object is always above ground
@@ -278,24 +278,26 @@ class RandomTile {
         if (this.x > 600) //reset when going off screen
         {
             this.appear = false; //appearn() will stop being called
-            this.x = 0; // reset at original position on the left
-            this.h = 60; //new object height
+            this.w=20 * Math.floor((Math.random()*5)+1) //must be bigger than 20 and divisible by 20
+            this.x = -100; // reset at original position on the left
+            this.h = 10+10*Math.floor((Math.random()*5)+1); //new object height //must at least 20 and divisible by 10
             this.y = 450 - (30 * (this.h / 30 - 1)); //adjust y to new height
+            
         }
-        if (Math.abs(this.x - player.x) == 20 && player.x > this.x) //when player and object collide on x axis
+        if (Math.abs(this.x - player.x) == this.w   && player.x > this.x) //when player and object collide on x axis
         {
             if (player.y + player.h / 2 > (this.y - this.h / 2)) // if player isnt in the air over the obstacle
-                this.hitPlayer = true;
+            this.hitPlayer = true;
 
             else this.hitPlayer = false;
         }
     }
 
     playerOnTop() {
-        if (Math.abs(this.y - player.y) == 30 && Math.abs(this.x - player.x) < 20) {
+        if (Math.abs(this.y - player.y) == 30 && Math.abs(this.x - player.x) < this.w &&player.x > this.x-20) {
 
             player.playerWasOnTop = true;
-            console.log('PLAYA');
+         
         } else if (player.playerWasOnTop) {
 
             player.playerWasOnTop = false;
@@ -306,7 +308,7 @@ class RandomTile {
         }
     }
 }
-randomTile = new RandomTile(20, baseTile);
+randomTile = new RandomTile(100, baseTile);
 
 
 function eventHandler() {
