@@ -360,6 +360,9 @@ class Enemy {
     {
         ctx.fillStyle = 'black';
         ctx.fillRect(this.x+this.w/4, this.y-this.w/2, this.w/2, this.h/2)
+        ctx.fillStyle = 'white';
+        ctx.fillRect((this.x+this.w/4)+3,(this.y-this.w/2)+2,this.w/8,this.h/8)
+        ctx.fillRect((this.x+this.w/4)+9,(this.y-this.w/2)+2,this.w/8,this.h/8)
     }
 
     draw() {
