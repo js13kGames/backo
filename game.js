@@ -244,7 +244,7 @@ class RandomTile {
     constructor(w, tile) {
         this.x = 0;
         this.w = w;
-        this.h = 30; // random object height
+        this.h = 40; // random object height
         this.y = 450 - (30 * (this.h / 30 - 1)); //makes sure object is always above ground
         this.tile = tile;
         this.random = 0;
@@ -370,19 +370,24 @@ class Enemy {
     move() {
         if (game.leftArr && !randomTile.hitPlayer) {
             this.x += 5;
-            console.log('asd');
+            
         }
     }
     gothit() {
         if (Math.abs(projectile.x - this.x) < 30 && Math.abs(projectile.y - this.y) < 30 && projectile.hitEnemy == false) {
 
             projectile.hitEnemy = true;
-            console.log('hit');
+            
+            SlideBackWhenHit(function () {
+                    
+                enemy.x-=4; 
+             }, 1000/60, 25); //25 = number of times process repeats
             this.life--;
             if (this.life == 1) {
                 this.h /= 2;
                 this.w /= 2;
                 this.y -= 50;
+                
             }
         }
 
@@ -390,9 +395,24 @@ class Enemy {
             this.dead = true;
         }
     }
+
+
 }
 
 enemy = new Enemy(150, 350, 30, 30)
+
+function SlideBackWhenHit(callback, delay, repetitions) {
+    var x = 0;
+   
+    var intervalID = window.setInterval(function () {
+
+       callback();
+
+       if (++x === repetitions) {
+           window.clearInterval(intervalID);
+       }
+    }, delay);
+}
 
 //Functions containing class function exec order
 function EnemyThings() {
