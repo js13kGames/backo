@@ -169,10 +169,17 @@
 			this.y_dir = -1
 			this.acceleration = 7;
 			this.gravityForce = 8;
+			this.rotationSpeed=0;
 		}
 		draw() 
 		{
-			ctx.drawImage(neutralInteractable, 0, 0, 16, 16, this.x, this.y, this.w, this.h);
+			if(this.ejected)
+			{
+			rotateAndPaintImage(ctx,neutralInteractable,this.rotationSpeed,this.x,this.y,this.w/2,this.h/2,this.w,this.h)
+			this.rotationSpeed+=0.6;
+			}
+			else
+			ctx.drawImage(neutralInteractable, 0, 0, 16, 16, this.x, this.y, this.w, this.h);	
 		}
 		ascertainMovement()
 		{
@@ -422,6 +429,14 @@
 				window.clearInterval(ImpactXInterval);
 			}
 		}, 16.6666666667);
+	}
+	function rotateAndPaintImage ( context, image, angleInRad , positionX, positionY, axisX, axisY, width, height ) 
+	{
+        context.translate( positionX, positionY );
+        context.rotate( angleInRad );
+        context.drawImage( image, -axisX, -axisY, width, height );
+        context.rotate( -angleInRad );
+        context.translate( -positionX, -positionY );
 	}
 	function EnemyOrder() 
 	{
