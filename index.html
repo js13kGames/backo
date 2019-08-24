@@ -15,13 +15,11 @@
 	// Canvas Globals
 	var canvas = document.getElementById('game');
 	var ctx = canvas.getContext('2d');
-
 	// Tile Globals
 	var tiles = [];
 	for (var i = 0; i < 500; i += 25) tiles.push([i, 475]);
 	var firstTile = tiles[0];
 	tiles.push([firstTile[0] - 25, 475]);
-
 	// Image Globals
 	var baseTile = new Image();
 	var baseTile2 = new Image();
@@ -37,18 +35,16 @@
 	hostileInteractable.src = "../js13kgames_entry/tiles/hostile.png";
 	neutralInteractable.src = "../js13kgames_entry/tiles/neutral.png";
 	beneficialInteractable.src = "../js13kgames_entry/tiles/beneficial.png";
-
 	// Uncatogorized Globals
 	var ImpactXInterval;
 	var intervalOngoing = false;
-
 	class Game 
 	{
 		constructor(canvas_width, canvas_height) 
 		{
 			this.gravity = true;
 			this.status = 2; // 0 intro, 1 menu (selection), 2 gameplay, 3 menu during gameplay
-			this.leftArr = true;
+			this.leftArr = false;
 			this.upArrow = false;
 			this.slope = false;
 			this.canvas_width = canvas_width;
@@ -56,7 +52,6 @@
 			this.primitive_tile_width = 25;
 			this.primitive_tile_height = 25;
 		}
-
 		drawCanvas() 
 		{
 			var my_gradient = ctx.createLinearGradient(0, 0, 0, 320);
@@ -65,7 +60,6 @@
 			ctx.fillStyle = my_gradient;
 			ctx.fillRect(0, 0, this.canvas_width, this.canvas_height);
 		}
-
 		drawTiles() 
 		{
 			if (this.leftArr && !randomTile.hitPlayer) //now stops moving when playa is hit by obstacle
@@ -83,7 +77,6 @@
 					ctx.drawImage(baseTile, 0, 0, 16, 16, tiles[i][0], tiles[i][1], this.primitive_tile_width, this.primitive_tile_height);
 		}  
 	}
-
 	class Interactable 
 	{
 		constructor(status) 
@@ -92,7 +85,6 @@
 			this.y = parseInt(Math.random() * (400 - 100) + 100);
 			this.status = status; // beneficial, neutral, hostile
 		}
-
 		draw() 
 		{
 			if (this.status == 'hostile') 
@@ -102,18 +94,14 @@
 			if (this.status == 'beneficial') 
 				ctx.drawImage(beneficialInteractable, 0, 0, 16, 16, this.x, this.y, 16, 16);
 		}
-
 		ascertainCollision() 
 		{
-
 		}
-
 		ascertainMovement()
 		{
 			
 		}
 	}
-
 	class Player 
 	{
 		constructor() 
@@ -129,14 +117,13 @@
 			this.oldY = 0; 
 			this.jumpHeight = 90;
 			this.velocity = 5;
+			this.gravityForce = 5;
 		}
-
 		draw() 
 		{
 			ctx.fillStyle = 'gray';
 			ctx.fillRect(this.x, this.y, this.w, this.h);
 		}
-
 		jump() 
 		{
 			if (game.upArrow && this.verticalCollision) 
@@ -145,14 +132,14 @@
 				this.y -= this.jumpForce;
 			}
 		}
-
 		ascertainGravity() 
 		{
 			if (!this.verticalCollision && !this.playerWasOnTop) //Fall if player not on ground or on top of object
 			{
-				this.y += 5;
+				// console.log(this.gravityForce);
+				this.y += 5
 			}
-			if (this.y == 445 || this.playerWasOnTop) //stop falling if on ground or on object
+			if (this.y >= 445 || this.playerWasOnTop) //stop falling if on ground or on object
 			{
 				this.verticalCollision = true;
 				this.oldY = 0;
@@ -163,13 +150,10 @@
 				this.verticalCollision = false;
 			}
 		}
-
 		ascertainCollision()
 		{
-
 		}
 	}
-
 	class Projectile 
 	{
 		constructor(x, y, w, h) 
@@ -179,35 +163,52 @@
 			this.w = w;
 			this.h = h;
 			this.ejected = false;
-			this.wasLeft = false; //refers to player
 			this.hitEnemy = false;
+			this.x_dir = 1;
+			this.y_dir = -1
+			this.acceleration = 7;
+			this.gravityForce = 8;
 		}
-
 		draw() 
 		{
 			ctx.drawImage(neutralInteractable, 0, 0, 16, 16, this.x, this.y, this.w, this.h);
 		}
-
 		ascertainMovement()
 		{
 			if (!this.eject()) 
 			{
-				this.x = player.x + (this.w / 2);
-				this.y = player.y - this.h;
+				this.x = player.x + 15;
+				this.y = player.y;
 				return;
 			}
-			this.x -= 10;
+			this.x += this.x_dir * this.acceleration;
+			this.y += this.y_dir * this.acceleration;
 		}
-
 		ascertainCollision()
 		{
-			if (!this.ejected) return false;
+			if (!this.ejected){
+				this.x_dir = 1;
+				this.y_dir = -1;
+			}
 
-			if (this.x > game.canvas_width + this.w || this.x < 0 - this.w || this.y < 0 - this.h || this.y > game.canvas_height - game.primitive_tile_height - this.h) // if out of canvas boundaries or hits ground
+			if(this.x >= game.canvas_width)
+				this.x_dir *= -1 			// bounce off of right wall
+
+			if (this.x < 0 - this.w) // if out of canvas boundaries
 			{
 				this.ejected = false;
 				return;
 			} 
+
+			if(this.x <= 400 && this.y <= 460){
+				this.y_dir = 0;							// apply gravity when it reaches a certain point
+				this.y += this.gravityForce;
+				// this.ejected = false;
+			}
+			if(this.y >= 460){
+				this.ejected = false;				//disappears when it touches ze ground
+			}
+
 
 			if (Math.sign(Math.abs(this.x - randomTile.x)) && Math.abs(this.x - randomTile.x) < (this.w > randomTile.w ? this.w : randomTile.w) && this.y >= randomTile.y) // if hits a random tile
 			{
@@ -222,14 +223,12 @@
 				return;
 			}
 		}
-
 		eject() 
 		{
 			if (this.ejected) return true;
 			return false;
 		}
 	}
-
 	class RandomTile 
 	{
 		constructor(w, tile) 
@@ -244,14 +243,12 @@
 			this.hitPlayer = false;
 			this.playerWasOnTop = false; //tells the player if the player is on top of object
 		}
-
 		decideIfAppear() 
 		{
 			if (game.leftArr) this.random = Math.random() * 101;
 			if (this.random > 95) this.appear = true;
 			if (this.appear) this.appearnow();
 		}
-
 		appearnow() 
 		{
 			ctx.drawImage(this.tile, this.x, this.y, this.w, this.h);
@@ -270,7 +267,6 @@
 				else this.hitPlayer = false;
 			}
 		}
-
 		playerOnTop() 
 		{
 			if (Math.abs(this.y - player.y) == 30 && Math.abs(this.x - player.x) < this.w &&player.x > this.x-20) player.playerWasOnTop = true;
@@ -285,7 +281,6 @@
 			}
 		}
 	}
-
 	class Enemy 
 	{
 		constructor() 
@@ -298,13 +293,11 @@
 			this.verticalCollision = false;
 			this.negativeCollision = false;
 		}
-
 		draw() 
 		{
 			ctx.fillStyle = 'black';
 			ctx.fillRect(this.x, this.y, this.w, this.h)
 		}
-
 		fall() 
 		{
 			if (!this.verticalCollision && !this.playerWasOnTop) 
@@ -316,20 +309,17 @@
 			else 
 				this.verticalCollision = false;
 		}
-
 		move() 
 		{
 			if (game.leftArr && !randomTile.hitPlayer)
 				this.x += player.velocity;
 		}
-
 		ascertainCollision() 
 		{
 			if (this.x + this.w > 500)
 			{
 				this.respawn();
 			}
-
 			if (this.negativeCollision) // projectile collision
 			{
 				this.negativeCollision = false;
@@ -337,16 +327,13 @@
 				if (this.lives < 1)
 					return this.respawn();
 				ImpactX(enemy, 15);
-
 			}
-
 			if (Math.abs(this.x - randomTile.x) <= randomTile.w && this.y + this.h >= randomTile.y) // random tile collision
 			{
 				intervalOngoing = false;
 				clearInterval(ImpactXInterval);
 				return;
 			} 
-
 			if (Math.abs(this.x - player.x) < (this.w > player.w ? this.w : player.w)) // player collision
 			{
 				if (this.y <= player.y)
@@ -357,7 +344,6 @@
 				}
 			}
 		}
-
 		respawn() 
 		{
 			this.x = randomTile.appear ? randomTile.x - 200 : 250;
@@ -365,7 +351,6 @@
 			this.lives = 2;
 		}
 	}
-
 	game = new Game(500, 500);
 	randomTile = new RandomTile(100, baseTile);
 	player = new Player();
@@ -384,14 +369,19 @@
 			{
 				projectile.ejected = true;
 			}
+			if (event.keyCode == 37) // space
+			{
+				game.leftArr = true;
+	 		}
 		}, false);
-
 		window.addEventListener('keyup', function(event) 
 		{
-
+			if (event.keyCode == 37) // space
+			{
+				game.leftArr = false
+			}
 		}, false);
 	}
-
 	function ImpactX(entity, repetitions, reverse = false) 
 	{
 		if (intervalOngoing) return;
@@ -418,7 +408,6 @@
 			}
 		}, 16.6666666667);
 	}
-
 	function EnemyOrder() 
 	{
 		enemy.draw();
@@ -426,21 +415,18 @@
 		enemy.move();
 		enemy.ascertainCollision();
 	}
-
 	function ProjectileOrder() 
 	{
 		projectile.ascertainMovement();
 		projectile.ascertainCollision();
 		projectile.draw();
 	}
-
 	function PlayerOrder() 
 	{
 		player.ascertainGravity();
 		player.jump();
 		player.draw();
 	}
-
 	function recurring() 
 	{
 		game.drawCanvas();
@@ -451,7 +437,6 @@
 		EnemyOrder();
 		ProjectileOrder();
 	}
-
 	setInterval(recurring, 16.6666666667); // delenjeto sozdava stutters
 	eventHandler();
 	</script>
