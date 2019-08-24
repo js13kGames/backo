@@ -11,5 +11,433 @@
 			<canvas id="game" width="500" height="500"></canvas>
 		</div>
 	</body>
-	<script type="text/javascript" src="game.js"></script>
+	<script>
+	// Canvas Globals
+	var canvas = document.getElementById('game');
+	var ctx = canvas.getContext('2d');
+
+	// Tile Globals
+	var tiles = [];
+	for (var i = 0; i < 500; i += 25) tiles.push([i, 475]);
+	var firstTile = tiles[0];
+	tiles.push([firstTile[0] - 25, 475]);
+
+	// Image Globals
+	var baseTile = new Image();
+	var baseTile2 = new Image();
+	var openingSlopeTile = new Image();
+	var closingSlopeTile = new Image();
+	var hostileInteractable = new Image();
+	var neutralInteractable = new Image();
+	var beneficialInteractable = new Image();
+	baseTile.src = "../js13kgames_entry/tiles/2.png";
+	baseTile.src = "../js13kgames_entry/tiles/1.png";
+	openingSlopeTile.src = "../js13kgames_entry/tiles/3.png";
+	closingSlopeTile.src = "../js13kgames_entry/tiles/4.png";
+	hostileInteractable.src = "../js13kgames_entry/tiles/hostile.png";
+	neutralInteractable.src = "../js13kgames_entry/tiles/neutral.png";
+	beneficialInteractable.src = "../js13kgames_entry/tiles/beneficial.png";
+
+	class Game 
+	{
+		constructor(canvas_width, canvas_height) 
+		{
+			this.gravity = true;
+			this.status = 2; // 0 intro, 1 menu (selection), 2 gameplay, 3 menu during gameplay
+			this.leftArr = false;
+			this.rightArr = false;
+			this.upArrow = false;
+			this.slope = false;
+			this.canvas_width = canvas_width;
+			this.canvas_height = canvas_height;
+			this.primitive_tile_width = 25;
+			this.primitive_tile_height = 25;
+		}
+
+		drawCanvas() 
+		{
+			var my_gradient = ctx.createLinearGradient(0, 0, 0, 320);
+			my_gradient.addColorStop(0, "darkblue");
+			my_gradient.addColorStop(1, "lightblue");
+			ctx.fillStyle = my_gradient;
+			ctx.fillRect(0, 0, this.canvas_width, this.canvas_height);
+		}
+
+		drawTiles() 
+		{
+			if (this.leftArr && !randomTile.hitPlayer) //now stops moving when playa is hit by obstacle
+			{ 
+				var lastTile = tiles[tiles.length - 1];
+				tiles.push([lastTile[0] - this.primitive_tile_width, 475]);
+				for (var i = 0; i < tiles.length; i++) 
+				{
+					ctx.drawImage(baseTile, 0, 0, 16, 16, tiles[i][0], tiles[i][1], this.primitive_tile_width, this.primitive_tile_height);
+					tiles[i][0] += 5;
+				}
+			} 
+			else
+				for (var i = 0; i < tiles.length; i++)
+					ctx.drawImage(baseTile, 0, 0, 16, 16, tiles[i][0], tiles[i][1], this.primitive_tile_width, this.primitive_tile_height);
+		}  
+	}
+
+	class Interactable 
+	{
+		constructor(status) 
+		{
+			this.x = parseInt(Math.random() * (400 - 100) + 100);
+			this.y = parseInt(Math.random() * (400 - 100) + 100);
+			this.status = status; // beneficial, neutral, hostile
+		}
+
+		draw() 
+		{
+			if (this.status == 'hostile') 
+				ctx.drawImage(hostileInteractable, 0, 0, 16, 16, this.x, this.y, 16, 16);
+			if (this.status == 'netural') 
+				ctx.drawImage(neutralInteractable, 0, 0, 16, 16, this.x, this.y, 16, 16);
+			if (this.status == 'beneficial') 
+				ctx.drawImage(beneficialInteractable, 0, 0, 16, 16, this.x, this.y, 16, 16);
+		}
+
+		ascertainCollision() 
+		{
+
+		}
+
+		ascertainMovement()
+		{
+			
+		}
+	}
+
+	class Player 
+	{
+		constructor(health, shield, x, y, w, h) 
+		{
+			this.health = health;
+			this.shield = shield;
+			this.x_direction = 0; // -1: left, 0: none, 1: right
+			this.y_direction = 0; // -1: downwards, 0: none, 1: upwards
+			this.x = x;
+			this.y = y;
+			this.w = w;
+			this.h = h;
+			this.jumpForce = 15; //jump speed
+			this.verticalCollision = false;
+			this.horizontalCollision = false;
+			this.oldY = 0; //save Y before jumping
+			this.jumpHeight = 90; //how high should the player go from jump point - must be divisible by this.jumpforce
+		}
+
+		draw() 
+		{
+			ctx.fillStyle = 'gray';
+			ctx.fillRect(this.x, this.y, this.w, this.h);
+		}
+
+		jump() 
+		{
+			if (game.upArrow && this.verticalCollision) 
+			{
+				this.oldY += this.jumpForce;
+				this.y -= this.jumpForce;
+			}
+		}
+
+		fall() 
+		{
+			if (!this.verticalCollision && !this.playerWasOnTop) //Fall if player not on ground or on top of object
+			{
+				this.y += 5;
+			}
+			if (this.y == 445 || this.playerWasOnTop) //stop falling if on ground or on object
+			{
+				this.verticalCollision = true;
+				this.oldY = 0;
+
+			} 
+			else if (this.oldY > this.jumpHeight) //stop ascending when reaching max jump height
+			{
+				game.upArrow = false;
+				this.verticalCollision = false;
+			}
+		}
+	}
+
+	class Projectile 
+	{
+		constructor(x, y, w, h) 
+		{
+			this.x = x;
+			this.y = y;
+			this.w = w;
+			this.h = h;
+			this.ejected = false;
+			this.wasLeft = false; //refers to player
+			this.hitEnemy = false;
+		}
+
+		draw() 
+		{
+			ctx.drawImage(neutralInteractable, 0, 0, 16, 16, this.x, this.y, this.w, this.h);
+		}
+
+		ascertainMovement()
+		{
+			if (!this.eject()) 
+			{
+				this.x = player.x + (this.w / 2);
+				this.y = player.y - this.h;
+				return;
+			}
+			if (Math.random() > 0.90) this.y -= 10;
+			else this.x -= 10;
+		}
+
+		ascertainCollision()
+		{
+			if (this.x > game.canvas_width + this.w || this.x < 0 - this.w || this.y < 0 - this.h || this.y > game.canvas_height - game.primitive_tile_height - this.h)  // if out of canvas boundaries or hits ground
+				this.ejected = false;
+			
+			if (Math.abs(this.x - enemy.x) < enemy.w && Math.abs(this.y - enemy.y) < enemy.h) // if hits an enemy
+			{ 
+				this.ejected = false;
+				enemy.negativeCollision = true;
+			}
+			
+			if (Math.abs(this.x - randomTile.x) < randomTile.w && this.y + this.h >= randomTile.y) // if hits a random tile
+				this.ejected = false;
+		}
+
+		eject() 
+		{
+			if (this.ejected) return true;
+			return false;
+		}
+	}
+
+	class RandomTile 
+	{
+		constructor(w, tile) 
+		{
+			this.x = -100;
+			this.w = w;
+			this.h = 40; // random object height
+			this.y = 445 - (30 * (this.h / 30 - 1)); //makes sure object is always above ground
+			this.tile = tile;
+			this.random = 0;
+			this.appear = false;
+			this.hitPlayer = false;
+			this.playerWasOnTop = false; //tells the player if the player is on top of object
+		}
+
+		decideIfAppear() 
+		{
+			if (game.leftArr) this.random = Math.random() * 101;
+			if (this.random > 95) this.appear = true;
+			if (this.appear) this.appearnow();
+		}
+
+		appearnow() 
+		{
+			ctx.drawImage(this.tile, this.x, this.y, this.w, this.h);
+			if (game.leftArr && !this.hitPlayer) this.x += 5;
+			if (this.x > 600)
+			{
+				this.appear = false; //appearn() will stop being called
+				this.w=20 * Math.floor((Math.random()*5)+1) //must be bigger than 20 and divisible by 20
+				this.x = -100; // reset at original position on the left
+				this.h = 10+10*Math.floor((Math.random()*5)+1); //new object height //must at least 20 and divisible by 10
+				this.y = 445 - (30 * (this.h / 30 - 1)); //adjust y to new height   
+			}
+			if (Math.abs(this.x - player.x) == this.w   && player.x > this.x) //when player and object collide on x axis
+			{
+				if (player.y + player.h / 2 > (this.y - this.h / 2)) this.hitPlayer = true; // if player isnt in the air over the obstacle
+				else this.hitPlayer = false;
+			}
+		}
+
+		playerOnTop() 
+		{
+			if (Math.abs(this.y - player.y) == 30 && Math.abs(this.x - player.x) < this.w &&player.x > this.x-20) player.playerWasOnTop = true;
+			else if (player.playerWasOnTop) 
+			{
+				player.playerWasOnTop = false;
+				if (!game.upArrow) 
+				{
+					game.upArrow = false;
+					player.verticalCollision = false;
+				}
+			}
+		}
+	}
+
+	class Enemy 
+	{
+		constructor(x, y, w, h) 
+		{
+			this.x = x;
+			this.y = y;
+			this.w = w;
+			this.h = h;
+			this.life = 2;
+			this.dead = false;
+			this.verticalCollision = false;
+			this.negativeCollision = false;
+		}
+
+		head()
+		{
+			ctx.fillStyle = 'black';
+			ctx.fillRect(this.x+this.w/4, this.y-this.w/2, this.w/2, this.h/2)
+			ctx.fillStyle = 'white';
+			ctx.fillRect((this.x+this.w/4)+3,(this.y-this.w/2)+2,this.w/8,this.h/8)
+			ctx.fillRect((this.x+this.w/4)+9,(this.y-this.w/2)+2,this.w/8,this.h/8)
+		}
+
+		draw() 
+		{
+			ctx.fillStyle = 'black';
+			ctx.fillRect(this.x, this.y, this.w, this.h)
+		}
+		fall() 
+		{
+			if (!this.verticalCollision && !this.playerWasOnTop) //Fall if player not on ground or on top of object
+			{
+				this.y += 5;
+			}
+			if (this.y >= 445 + (30 - this.h)) //stop falling if on ground or on object
+				this.verticalCollision = true;
+			else this.verticalCollision = false;
+		}
+		move() 
+		{
+			if (game.leftArr && !randomTile.hitPlayer)
+				this.x += 5;
+		}
+
+		ascertainCollision() 
+		{
+			if (this.negativeCollision) 
+			{
+				this.negativeCollision = false;
+				SlideBackWhenHit(function () 
+				{
+					enemy.x-=4; 
+				}
+				,1000/60, 25); //25 = number of times process repeats
+				this.life--;
+				if (this.life == 1) 
+				{
+					this.h /= 2;
+					this.w /= 2;
+					this.y -= 50;
+				}
+			}
+			if (this.life == 0) 
+				this.dead = true;
+		}
+	}
+
+	randomTile = new RandomTile(100, baseTile);
+	projectile = new Projectile(10, 10, 10, 10);
+	player = new Player(100, 0, 450, 420, 20, 30);
+	enemy = new Enemy(150, 350, 30, 30)
+	game = new Game(500, 500);
+
+	function eventHandler() 
+	{
+		window.addEventListener('keydown', function(event) 
+		{
+			if (event.keyCode == 38) // up
+			{
+				game.upArrow = true;
+			}
+			if (event.keyCode == 32) // space
+			{
+				projectile.ejected = true;
+			}
+			if (event.keyCode == 37) 
+			{ // left
+				game.leftArr = true;
+				if (!projectile.ejected) projectile.wasLeft = true;
+			}
+			if (event.keyCode == 39) 
+			{ // right
+				game.rightArr = true;
+				if (!projectile.ejected) projectile.wasLeft = false;
+			}
+		}, false);
+
+		window.addEventListener('keyup', function(event) 
+		{
+			if (event.keyCode == 37) 
+			{ // left
+				if (player.x_direction == 1) return;
+				game.leftArr = false;
+				if (!projectile.ejected) projectile.wasLeft = true;
+			}
+			if (event.keyCode == 39)
+			{ // right
+				if (player.x_direction == -1) return;
+				game.rightArr = false;
+				if (!projectile.ejected) projectile.wasLeft = false;
+			}
+		}, false);
+	}
+
+	function SlideBackWhenHit(callback, delay, repetitions) 
+	{
+		var x = 0;
+		var intervalID = window.setInterval(function () 
+		{
+		callback();
+		if (++x === repetitions) 
+		{
+			window.clearInterval(intervalID);
+		}
+		}, delay);
+	}
+
+	function EnemyOrder() 
+	{
+		if (!enemy.dead) 
+		{
+			enemy.draw();
+			enemy.head();
+			enemy.fall();
+			enemy.move();
+			enemy.ascertainCollision();
+		}
+	}
+
+	function ProjectileOrder() 
+	{
+		projectile.ascertainMovement();
+		projectile.ascertainCollision();
+		projectile.draw();
+	}
+
+	function PlayerOrder() 
+	{
+		player.fall();
+		player.jump();
+		player.draw();
+	}
+
+	function recurring() 
+	{
+		game.drawCanvas();
+		game.drawTiles();
+		randomTile.decideIfAppear();
+		randomTile.playerOnTop();
+		PlayerOrder();
+		EnemyOrder();
+		ProjectileOrder();
+	}
+
+	setInterval(recurring, 16.6666666667); // delenjeto sozdava stutters
+	eventHandler();
+	</script>
 </html>
