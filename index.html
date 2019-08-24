@@ -44,6 +44,7 @@
 		{
 			this.gravity = true;
 			this.status = 2; // 0 intro, 1 menu (selection), 2 gameplay, 3 menu during gameplay
+			this.rightArr=false;
 			this.leftArr = false;
 			this.upArrow = false;
 			this.slope = false;
@@ -164,7 +165,7 @@
 			this.h = h;
 			this.ejected = false;
 			this.hitEnemy = false;
-			this.x_dir = 1;
+			this.x_dir = -1;
 			this.y_dir = -1
 			this.acceleration = 7;
 			this.gravityForce = 8;
@@ -177,8 +178,8 @@
 		{
 			if (!this.eject()) 
 			{
-				this.x = player.x + 15;
-				this.y = player.y;
+				this.x = player.x+5; //ball stays on top of player
+				this.y = player.y-10;
 				return;
 			}
 			this.x += this.x_dir * this.acceleration;
@@ -186,12 +187,16 @@
 		}
 		ascertainCollision()
 		{
-			if (!this.ejected){
-				this.x_dir = 1;
+			if (!this.ejected && game.leftArr){ // If while not ejected leftarrow is pressed (atleast once), shot will go to the left.
+				this.x_dir = -1; 
 				this.y_dir = -1;
+			} 
+			else if (!this.ejected && game.rightArr)
+			{
+				this.x_dir = 1; 
+                this.y_dir = -1;
 			}
-
-			if(this.x >= game.canvas_width)
+            if(this.x >= game.canvas_width)
 				this.x_dir *= -1 			// bounce off of right wall
 
 			if (this.x < 0 - this.w) // if out of canvas boundaries
@@ -369,9 +374,13 @@
 			{
 				projectile.ejected = true;
 			}
-			if (event.keyCode == 37) // space
+			if (event.keyCode == 37) // left
 			{
 				game.leftArr = true;
+	 		}
+			 if (event.keyCode == 39) // right
+			{
+				game.rightArr = true;
 	 		}
 		}, false);
 		window.addEventListener('keyup', function(event) 
@@ -380,6 +389,10 @@
 			{
 				game.leftArr = false
 			}
+			if (event.keyCode == 39) // right
+			{
+				game.rightArr = false;
+	 		}
 		}, false);
 	}
 	function ImpactX(entity, repetitions, reverse = false) 
