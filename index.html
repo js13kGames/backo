@@ -38,14 +38,17 @@
 	neutralInteractable.src = "../js13kgames_entry/tiles/neutral.png";
 	beneficialInteractable.src = "../js13kgames_entry/tiles/beneficial.png";
 
+	// Uncatogorized Globals
+	var ImpactXInterval;
+	var intervalOngoing = false;
+
 	class Game 
 	{
 		constructor(canvas_width, canvas_height) 
 		{
 			this.gravity = true;
 			this.status = 2; // 0 intro, 1 menu (selection), 2 gameplay, 3 menu during gameplay
-			this.leftArr = false;
-			this.rightArr = false;
+			this.leftArr = true;
 			this.upArrow = false;
 			this.slope = false;
 			this.canvas_width = canvas_width;
@@ -72,7 +75,7 @@
 				for (var i = 0; i < tiles.length; i++) 
 				{
 					ctx.drawImage(baseTile, 0, 0, 16, 16, tiles[i][0], tiles[i][1], this.primitive_tile_width, this.primitive_tile_height);
-					tiles[i][0] += 5;
+					tiles[i][0] += player.velocity; 
 				}
 			} 
 			else
@@ -113,21 +116,19 @@
 
 	class Player 
 	{
-		constructor(health, shield, x, y, w, h) 
+		constructor() 
 		{
-			this.health = health;
-			this.shield = shield;
-			this.x_direction = 0; // -1: left, 0: none, 1: right
-			this.y_direction = 0; // -1: downwards, 0: none, 1: upwards
-			this.x = x;
-			this.y = y;
-			this.w = w;
-			this.h = h;
-			this.jumpForce = 15; //jump speed
+			this.health = 100;
+			this.w = 20;
+			this.h = 30;
+			this.x = 450;
+			this.y = game.canvas_height - game.primitive_tile_height - this.h - 5;
+			this.jumpForce = 15;
 			this.verticalCollision = false;
 			this.horizontalCollision = false;
-			this.oldY = 0; //save Y before jumping
-			this.jumpHeight = 90; //how high should the player go from jump point - must be divisible by this.jumpforce
+			this.oldY = 0; 
+			this.jumpHeight = 90;
+			this.velocity = 5;
 		}
 
 		draw() 
@@ -145,7 +146,7 @@
 			}
 		}
 
-		fall() 
+		ascertainGravity() 
 		{
 			if (!this.verticalCollision && !this.playerWasOnTop) //Fall if player not on ground or on top of object
 			{
@@ -155,13 +156,17 @@
 			{
 				this.verticalCollision = true;
 				this.oldY = 0;
-
 			} 
-			else if (this.oldY > this.jumpHeight) //stop ascending when reaching max jump height
+			else if (this.oldY === this.jumpHeight) //stop ascending when reaching max jump height
 			{
 				game.upArrow = false;
 				this.verticalCollision = false;
 			}
+		}
+
+		ascertainCollision()
+		{
+
 		}
 	}
 
@@ -191,23 +196,31 @@
 				this.y = player.y - this.h;
 				return;
 			}
-			if (Math.random() > 0.90) this.y -= 10;
-			else this.x -= 10;
+			this.x -= 10;
 		}
 
 		ascertainCollision()
 		{
-			if (this.x > game.canvas_width + this.w || this.x < 0 - this.w || this.y < 0 - this.h || this.y > game.canvas_height - game.primitive_tile_height - this.h)  // if out of canvas boundaries or hits ground
+			if (!this.ejected) return false;
+
+			if (this.x > game.canvas_width + this.w || this.x < 0 - this.w || this.y < 0 - this.h || this.y > game.canvas_height - game.primitive_tile_height - this.h) // if out of canvas boundaries or hits ground
+			{
 				this.ejected = false;
+				return;
+			} 
+
+			if (Math.sign(Math.abs(this.x - randomTile.x)) && Math.abs(this.x - randomTile.x) < (this.w > randomTile.w ? this.w : randomTile.w) && this.y >= randomTile.y) // if hits a random tile
+			{
+				this.ejected = false;
+				return;
+			}
 			
-			if (Math.abs(this.x - enemy.x) < enemy.w && Math.abs(this.y - enemy.y) < enemy.h) // if hits an enemy
+			if (Math.abs(this.x - enemy.x) < (this.w > enemy.w ? this.w : enemy.w) && this.y > enemy.y) // if hits an enemy
 			{ 
 				this.ejected = false;
 				enemy.negativeCollision = true;
+				return;
 			}
-			
-			if (Math.abs(this.x - randomTile.x) < randomTile.w && this.y + this.h >= randomTile.y) // if hits a random tile
-				this.ejected = false;
 		}
 
 		eject() 
@@ -242,7 +255,7 @@
 		appearnow() 
 		{
 			ctx.drawImage(this.tile, this.x, this.y, this.w, this.h);
-			if (game.leftArr && !this.hitPlayer) this.x += 5;
+			if (game.leftArr && !this.hitPlayer) this.x += player.velocity;
 			if (this.x > 600)
 			{
 				this.appear = false; //appearn() will stop being called
@@ -275,25 +288,15 @@
 
 	class Enemy 
 	{
-		constructor(x, y, w, h) 
+		constructor() 
 		{
-			this.x = x;
-			this.y = y;
-			this.w = w;
-			this.h = h;
-			this.life = 2;
-			this.dead = false;
+			this.w = player.w * 2;
+			this.h = player.h * 1.5;
+			this.x = 250;
+			this.y = game.canvas_height - game.primitive_tile_height - this.h - 5;
+			this.lives = 2;
 			this.verticalCollision = false;
 			this.negativeCollision = false;
-		}
-
-		head()
-		{
-			ctx.fillStyle = 'black';
-			ctx.fillRect(this.x+this.w/4, this.y-this.w/2, this.w/2, this.h/2)
-			ctx.fillStyle = 'white';
-			ctx.fillRect((this.x+this.w/4)+3,(this.y-this.w/2)+2,this.w/8,this.h/8)
-			ctx.fillRect((this.x+this.w/4)+9,(this.y-this.w/2)+2,this.w/8,this.h/8)
 		}
 
 		draw() 
@@ -301,50 +304,73 @@
 			ctx.fillStyle = 'black';
 			ctx.fillRect(this.x, this.y, this.w, this.h)
 		}
+
 		fall() 
 		{
-			if (!this.verticalCollision && !this.playerWasOnTop) //Fall if player not on ground or on top of object
+			if (!this.verticalCollision && !this.playerWasOnTop) 
 			{
 				this.y += 5;
 			}
-			if (this.y >= 445 + (30 - this.h)) //stop falling if on ground or on object
+			if (this.y >= 445 + (30 - this.h)) 
 				this.verticalCollision = true;
-			else this.verticalCollision = false;
+			else 
+				this.verticalCollision = false;
 		}
+
 		move() 
 		{
 			if (game.leftArr && !randomTile.hitPlayer)
-				this.x += 5;
+				this.x += player.velocity;
 		}
 
 		ascertainCollision() 
 		{
-			if (this.negativeCollision) 
+			if (this.x + this.w > 500)
+			{
+				this.respawn();
+			}
+
+			if (this.negativeCollision) // projectile collision
 			{
 				this.negativeCollision = false;
-				SlideBackWhenHit(function () 
+				this.lives--;
+				if (this.lives < 1)
+					return this.respawn();
+				ImpactX(enemy, 15);
+
+			}
+
+			if (Math.abs(this.x - randomTile.x) <= randomTile.w && this.y + this.h >= randomTile.y) // random tile collision
+			{
+				intervalOngoing = false;
+				clearInterval(ImpactXInterval);
+				return;
+			} 
+
+			if (Math.abs(this.x - player.x) < (this.w > player.w ? this.w : player.w)) // player collision
+			{
+				if (this.y <= player.y)
 				{
-					enemy.x-=4; 
-				}
-				,1000/60, 25); //25 = number of times process repeats
-				this.life--;
-				if (this.life == 1) 
-				{
-					this.h /= 2;
-					this.w /= 2;
-					this.y -= 50;
+					ImpactX(randomTile, 15, true);
+					ImpactX(enemy, 15, true);
+					ImpactX(tiles, 15, true);
 				}
 			}
-			if (this.life == 0) 
-				this.dead = true;
+		}
+
+		respawn() 
+		{
+			this.x = randomTile.appear ? randomTile.x - 200 : 250;
+			this.y = game.canvas_height - this.h - game.primitive_tile_height;
+			this.lives = 2;
 		}
 	}
 
-	randomTile = new RandomTile(100, baseTile);
-	projectile = new Projectile(10, 10, 10, 10);
-	player = new Player(100, 0, 450, 420, 20, 30);
-	enemy = new Enemy(150, 350, 30, 30)
 	game = new Game(500, 500);
+	randomTile = new RandomTile(100, baseTile);
+	player = new Player();
+	enemy = new Enemy();
+	projectile = new Projectile(10, 10, 10, 10);
 
 	function eventHandler() 
 	{
@@ -358,58 +384,47 @@
 			{
 				projectile.ejected = true;
 			}
-			if (event.keyCode == 37) 
-			{ // left
-				game.leftArr = true;
-				if (!projectile.ejected) projectile.wasLeft = true;
-			}
-			if (event.keyCode == 39) 
-			{ // right
-				game.rightArr = true;
-				if (!projectile.ejected) projectile.wasLeft = false;
-			}
 		}, false);
 
 		window.addEventListener('keyup', function(event) 
 		{
-			if (event.keyCode == 37) 
-			{ // left
-				if (player.x_direction == 1) return;
-				game.leftArr = false;
-				if (!projectile.ejected) projectile.wasLeft = true;
-			}
-			if (event.keyCode == 39)
-			{ // right
-				if (player.x_direction == -1) return;
-				game.rightArr = false;
-				if (!projectile.ejected) projectile.wasLeft = false;
-			}
+
 		}, false);
 	}
 
-	function SlideBackWhenHit(callback, delay, repetitions) 
+	function ImpactX(entity, repetitions, reverse = false) 
 	{
-		var x = 0;
-		var intervalID = window.setInterval(function () 
+		if (intervalOngoing) return;
+		intervalOngoing = true;
+		let x = 0;
+		ImpactXInterval = window.setInterval(function () 
 		{
-		callback();
-		if (++x === repetitions) 
-		{
-			window.clearInterval(intervalID);
-		}
-		}, delay);
+			if (reverse) 
+			{
+				player.velocity = -10;
+				game.upArrow = true;
+			}
+			else 
+			{
+				entity.x -= 15;
+			}
+			if (++x === repetitions) 
+			{
+				if (reverse)
+					player.velocity = 5;
+				 
+				intervalOngoing = false;
+				window.clearInterval(ImpactXInterval);
+			}
+		}, 16.6666666667);
 	}
 
 	function EnemyOrder() 
 	{
-		if (!enemy.dead) 
-		{
-			enemy.draw();
-			enemy.head();
-			enemy.fall();
-			enemy.move();
-			enemy.ascertainCollision();
-		}
+		enemy.draw();
+		enemy.fall();
+		enemy.move();
+		enemy.ascertainCollision();
 	}
 
 	function ProjectileOrder() 
@@ -421,7 +436,7 @@
 
 	function PlayerOrder() 
 	{
-		player.fall();
+		player.ascertainGravity();
 		player.jump();
 		player.draw();
 	}
