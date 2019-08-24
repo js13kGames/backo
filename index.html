@@ -226,6 +226,7 @@
 			if (Math.sign(Math.abs(this.x - randomTile.x)) && Math.abs(this.x - randomTile.x) < (this.w > randomTile.w ? this.w : randomTile.w) && this.y >= randomTile.y) // if hits a random tile
 			{
 				this.ejected = false;
+				this.y_dir=-1;
 				return;
 			}
 			
