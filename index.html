@@ -369,11 +369,11 @@
 		healthbar()
 		{
 			ctx.fillStyle='gray';
-			ctx.fillRect(this.x,this.y-15,this.w, 10);
+			ctx.fillRect(this.x,this.y-this.w/3,this.w, 10);
 			if (this.currentLives == 1)
 			ctx.fillStyle='red';
 			else ctx.fillStyle='green';
-			ctx.fillRect(this.x,this.y-15,this.w*((this.currentLives*100/this.maxLives)/100), 10);
+			ctx.fillRect(this.x,this.y-this.w/3,this.w*((this.currentLives*100/this.maxLives)/100), 10);
 			
 		}
 	}
