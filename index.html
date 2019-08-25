@@ -304,7 +304,8 @@
 			this.h = player.h * 1.5;
 			this.x = 250;
 			this.y = game.canvas_height - game.primitive_tile_height - this.h - 5;
-			this.lives = 2;
+			this.maxLives=3;
+			this.currentLives = this.maxLives;
 			this.verticalCollision = false;
 			this.negativeCollision = false;
 		}
@@ -338,8 +339,8 @@
 			if (this.negativeCollision) // projectile collision
 			{
 				this.negativeCollision = false;
-				this.lives--;
-				if (this.lives < 1)
+				this.currentLives--;
+				if (this.currentLives < 1)
 					return this.respawn();
 				ImpactX(enemy, 15);
 			}
@@ -363,7 +364,15 @@
 		{
 			this.x = randomTile.appear ? randomTile.x - 200 : 250;
 			this.y = game.canvas_height - this.h - game.primitive_tile_height;
-			this.lives = 2;
+			this.currentLives = this.maxLives;
+		}
+		healthbar()
+		{
+			ctx.fillStyle='gray';
+			ctx.fillRect(this.x,this.y-15,this.w, 10);
+			ctx.fillStyle='red';
+			ctx.fillRect(this.x,this.y-15,this.w*((this.currentLives*100/this.maxLives)/100), 10);
+			
 		}
 	}
 	game = new Game(500, 500);
@@ -431,6 +440,7 @@
 			}
 		}, 16.6666666667);
 	}
+
 	function rotateAndPaintImage ( context, image, angleInRad , positionX, positionY, axisX, axisY, width, height ) 
 	{
         context.translate( positionX, positionY );
@@ -442,6 +452,7 @@
 	function EnemyOrder() 
 	{
 		enemy.draw();
+		enemy.healthbar();
 		enemy.fall();
 		enemy.move();
 		enemy.ascertainCollision();
