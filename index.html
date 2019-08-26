@@ -24,6 +24,7 @@
 	var characterImage = new Image();
 	var characterSpriteDefault = new Image();
 	var characterSpriteWalking = new Image();
+	var karambit = new Image();
 	var baseTile = new Image();
 	var baseTile2 = new Image();
 	var openingSlopeTile = new Image();
@@ -41,6 +42,7 @@
 	characterImage.src = "../js13kgames_entry/tiles/character.png";
 	characterSpriteDefault.src = "../js13kgames_entry/tiles/karakter 1.png";
 	characterSpriteWalking.src= "../js13kgames_entry/tiles/karakter 2.png";
+	karambit.src = "../js13kgames_entry/tiles/karambit.png";
 
 	// Uncatogorized Globals
 	var ImpactXInterval;
@@ -192,11 +194,11 @@
 		{
 			if (this.ejected)
 			{
-				rotateAndPaintImage(ctx,neutralInteractable,this.rotationSpeed,this.x,this.y,this.w/2,this.h/2,this.w,this.h)
-				this.rotationSpeed+=0.6;
+				rotateAndPaintImage(ctx,karambit,this.rotationSpeed,this.x,this.y,this.w/2,this.h/2,this.w,this.h)
+				this.rotationSpeed+=0.3;
 			}
 			else
-			ctx.drawImage(neutralInteractable, 0, 0, 16, 16, this.x, this.y, this.w, this.h);	
+			ctx.drawImage(karambit, this.x, this.y, this.w, this.h);	
 		}
 		ascertainMovement()
 		{
@@ -204,8 +206,8 @@
 			{
 				this.x_dir = 1;
 				this.y_dir = -1;
-				this.x = player.x + 15; //ball stays on top of player
-				this.y = player.y;
+				this.x = player.x+7; //ball stays on top of player
+				this.y = player.y+6;
 				return;
 			}
 			this.x += this.x_dir * this.acceleration;
@@ -393,7 +395,7 @@
 	randomTile = new RandomTile(100, baseTile);
 	player = new Player();
 	enemy = new Enemy();
-	projectile = new Projectile(10, 10, 10, 10);
+	projectile = new Projectile(10, 10, 25, 25);
 
 	function eventHandler() 
 	{
