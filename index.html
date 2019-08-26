@@ -15,11 +15,7 @@
 	// Canvas Globals
 	var canvas = document.getElementById('game');
 	var ctx = canvas.getContext('2d');
-	// Tile Globals
-	var tiles = [];
-	for (var i = 0; i < 500; i += 25) tiles.push([i, 475]);
-	var firstTile = tiles[0];
-	tiles.push([firstTile[0] - 25, 475]);
+
 	// Image Globals
 	var characterImage = new Image();
 	var characterSpriteDefault = new Image();
@@ -47,6 +43,22 @@
 	// Uncatogorized Globals
 	var ImpactXInterval;
 	var intervalOngoing = false;
+
+	class Tile {
+		constructor(x,y,type){
+			this.x=x;
+			this.y=y;
+			this.type=type;
+			this.w=25;
+			this.h=25;
+		}
+	}
+	var tiles = [];					
+	for (var i = 0; i < 500; i += 25)
+		tiles.push(new Tile(i,475,'basic'));				//pushing the initial tiles to the array so they can be drawn immediately
+	var firstTile = tiles[0];
+	tiles.push(new Tile(firstTile.x - 25, 475, 'basic'));
+
 	class Game 
 	{
 		constructor(canvas_width, canvas_height) 
@@ -74,17 +86,24 @@
 		{
 			if (this.leftArr && !randomTile.hitPlayer) //now stops moving when playa is hit by obstacle
 			{ 
+				// console.log(tiles);
 				var lastTile = tiles[tiles.length - 1];
-				tiles.push([lastTile[0] - this.primitive_tile_width, 475]);
+				tiles.push(new Tile(lastTile.x - this.primitive_tile_width, 475, 'basic'));
 				for (var i = 0; i < tiles.length; i++) 
 				{
-					ctx.drawImage(baseTile, 0, 0, 16, 16, tiles[i][0], tiles[i][1], this.primitive_tile_width, this.primitive_tile_height);
-					tiles[i][0] += player.velocity; 
+					ctx.drawImage(baseTile, 0, 0, 16, 16, tiles[i].x, tiles[i].y, this.primitive_tile_width, this.primitive_tile_height);
+					tiles[i].x += player.velocity; 
 				}
+
+				// for (var i = 0; i < tiles.length; i++) 
+				// {
+				// 	if(tiles[i].x <= -100 || tiles[i].x >= 600)			//removing elements from the tiles array;
+				// 		tiles.splice(i,1);
+				// }
 			} 
 			else
 				for (var i = 0; i < tiles.length; i++)
-					ctx.drawImage(baseTile, 0, 0, 16, 16, tiles[i][0], tiles[i][1], this.primitive_tile_width, this.primitive_tile_height);
+					ctx.drawImage(baseTile, 0, 0, 16, 16, tiles[i].x, tiles[i].y, this.primitive_tile_width, this.primitive_tile_height);
 		}  
 	}
 	class Interactable 
