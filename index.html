@@ -22,6 +22,8 @@
 	tiles.push([firstTile[0] - 25, 475]);
 	// Image Globals
 	var characterImage = new Image();
+	var characterSpriteDefault = new Image();
+	var characterSpriteWalking = new Image();
 	var baseTile = new Image();
 	var baseTile2 = new Image();
 	var openingSlopeTile = new Image();
@@ -37,6 +39,9 @@
 	neutralInteractable.src = "../js13kgames_entry/tiles/neutral.png";
 	beneficialInteractable.src = "../js13kgames_entry/tiles/beneficial.png";
 	characterImage.src = "../js13kgames_entry/tiles/character.png";
+	characterSpriteDefault.src = "../js13kgames_entry/tiles/karakter 1.png";
+	characterSpriteWalking.src= "../js13kgames_entry/tiles/karakter 2.png";
+
 	// Uncatogorized Globals
 	var ImpactXInterval;
 	var intervalOngoing = false;
@@ -131,9 +136,9 @@
 		draw() 
 		{
 			if(game.leftArr && !randomTile.hitPlayer) // if player "moving" do the animation
-			    animatePlayer(characterImage, baseTile, ctx, this.x,this.y,this.w,this.h);
+			    animatePlayer(characterSpriteDefault, characterSpriteWalking, ctx, this.x,this.y,this.w,this.h);
 			else
-				ctx.drawImage(characterImage,this.x,this.y,this.w,this.h);
+				ctx.drawImage(characterSpriteDefault,this.x,this.y,this.w,this.h);
 				
 		}
 		jump() 
