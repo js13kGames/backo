@@ -47,7 +47,7 @@
 			this.gravity = true;
 			this.status = 2; // 0 intro, 1 menu (selection), 2 gameplay, 3 menu during gameplay
 			this.rightArr=false;
-			this.leftArr = true;
+			this.leftArr = false;
 			this.upArrow = false;
 			this.slope = false;
 			this.canvas_width = canvas_width;
@@ -125,11 +125,16 @@
 			this.gravityForce = 5;
 			this.className = 'Player';
 			this.enemyBounce = false;
+			var timerForFirstImage=0; //used in animation function to store the number of cycles the current image has been active
+			var timerForSecondImage=0;
 		}
 		draw() 
 		{
-			ctx.fillStyle = 'gray';
-			ctx.fillRect(this.x, this.y, this.w, this.h);
+			if(game.leftArr && !randomTile.hitPlayer) // if player "moving" do the animation
+			    animatePlayer(characterImage, baseTile, ctx, this.x,this.y,this.w,this.h);
+			else
+				ctx.drawImage(characterImage,this.x,this.y,this.w,this.h);
+				
 		}
 		jump() 
 		{
@@ -459,6 +464,21 @@
 			}
 		}, 16.6666666667);
 	}
+	
+	function animatePlayer( defaultImage, walkingImage, context) {
+	  if(player.timerForFirstImage<5) {  //crta prvata slika 5 ciklusi
+	    context.drawImage(defaultImage,player.x,player.y,player.w,player.h);
+		player.timerForFirstImage++;
+	  }
+	  else if(player.timerForSecondImage<5) { //crta vtorata slika 5 ciklusi
+	    context.drawImage(walkingImage,player.x,player.y,player.w,player.h);
+		player.timerForSecondImage++
+	  }
+	  else { //resetira, so sho ke pocni da ja crta prvata slika povtorno
+		player.timerForFirstImage=0
+		player.timerForSecondImage=0;
+	  }		
+}
 
 	function rotateAndPaintImage ( context, image, angleInRad , positionX, positionY, axisX, axisY, width, height ) 
 	{
