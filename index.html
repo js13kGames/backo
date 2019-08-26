@@ -475,6 +475,7 @@
 		player.timerForSecondImage++
 	  }
 	  else { //resetira, so sho ke pocni da ja crta prvata slika povtorno
+		context.drawImage(defaultImage,player.x,player.y,player.w,player.h);
 		player.timerForFirstImage=0
 		player.timerForSecondImage=0;
 	  }		
