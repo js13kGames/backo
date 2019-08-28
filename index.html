@@ -28,6 +28,8 @@
 	var hostileInteractable = new Image();
 	var neutralInteractable = new Image();
 	var beneficialInteractable = new Image();
+	var heart = new Image();
+	heart.src = "../js13kgames_entry/tiles/heart.png"
 	baseTile.src = "../js13kgames_entry/tiles/2.png";
 	baseTile.src = "../js13kgames_entry/tiles/1.png";
 	openingSlopeTile.src = "../js13kgames_entry/tiles/3.png";
@@ -151,6 +153,7 @@
 			this.className = 'Player';
 			this.enemyBounce = false;
 			this.playerWasOnTop = false;
+			this.lives=3;
 			var timerForFirstImage=0; //used in animation function to store the number of cycles the current image has been active
 			var timerForSecondImage=0;
 		}
@@ -160,7 +163,6 @@
 			    animatePlayer(characterSpriteDefault, characterSpriteWalking, ctx, this.x,this.y,this.w,this.h);
 			else
 				ctx.drawImage(characterSpriteDefault,this.x,this.y,this.w,this.h);
-				
 		}
 		jump() 
 		{
@@ -187,6 +189,16 @@
 				game.upArrow = false;
 				this.verticalCollision = false;
 			}
+		}
+		processLives(){
+			this.drawLives();
+		}
+		drawLives(){
+			for(let i = 1; i <= this.lives; i++){
+				ctx.drawImage(heart,game.canvas_width - i*25,10,16,16);
+			}
+			
+
 		}
 		ascertainCollision()
 		{
@@ -390,6 +402,7 @@
 				ImpactX(randomTile, 15, true);
 				ImpactX(enemy, 15, true);
 				ImpactX(tiles, 15, true);
+				player.lives --;
 				return;
 			}
 		}
@@ -484,7 +497,7 @@
 		player.timerForFirstImage=0
 		player.timerForSecondImage=0;
 	  }		
-}
+	}
 
 	function rotateAndPaintImage ( context, image, angleInRad , positionX, positionY, axisX, axisY, width, height ) 
 	{
@@ -513,6 +526,7 @@
 		player.ascertainGravity();
 		player.jump();
 		player.draw();
+		player.processLives();
 	}
 	function recurring() 
 	{
