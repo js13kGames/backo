@@ -12,6 +12,8 @@
 		</div>
 	</body>
 	<script>
+	// game variable
+	var gameStarted = false;
 	// Canvas Globals
 	var canvas = document.getElementById('game');
 	var ctx = canvas.getContext('2d');
@@ -433,6 +435,13 @@
 	{
 		window.addEventListener('keydown', function(event) 
 		{
+			if (!gameStarted)
+			{
+				if (event.keyCode == 13) // start game when pressing enter
+				    gameStarted = true;
+			}
+			else
+			{
 			if (event.keyCode == 38) // up
 			{
 				game.upArrow = true;
@@ -445,6 +454,7 @@
 			{
 				game.leftArr = true;
 	 		}
+			}
 		}, false);
 		window.addEventListener('keyup', function(event) 
 		{
@@ -528,15 +538,39 @@
 		player.draw();
 		player.processLives();
 	}
+	function WaitForStart()
+	{
+		ctx.font = "35px Impact";
+		//ime na gejm text
+        var my_gradient = ctx.createLinearGradient(0, 0, 320, 0);
+			my_gradient.addColorStop(0, "purple");
+			my_gradient.addColorStop(1, "yellow");
+			ctx.fillStyle = my_gradient;
+		ctx.textAlign = "center";
+        ctx.fillText("Ime na gejmot", canvas.width/2, canvas.height/2-100); 
+		//start game text
+		my_gradient = ctx.createLinearGradient(0, 0, 320, 0);
+		my_gradient.addColorStop(0, "yellow");
+			my_gradient.addColorStop(1, "purple");
+			ctx.fillStyle = my_gradient;
+        ctx.textAlign = "center";
+        ctx.fillText("Click Enter to start game!", canvas.width/2, canvas.height/2); 
+		ctx.drawImage(characterSpriteDefault,250,350,20,20);
+	}
 	function recurring() 
 	{
 		game.drawCanvas();
+		if(!gameStarted)
+		WaitForStart();
+		else
+		{
 		game.drawTiles();
 		randomTile.appearnow();
 		randomTile.playerOnTop();
 		PlayerOrder();
 		EnemyOrder();
 		ProjectileOrder();
+		}
 	}
 	setInterval(recurring, 16.6666666667); // delenjeto sozdava stutters
 	eventHandler();
