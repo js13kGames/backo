@@ -347,6 +347,40 @@
 			}
 		}
 	}
+	class Cloud {
+		constructor(x,y){
+			this.cloudX = -300
+			this.cloudY = Math.random() * (200 - 50) + 50
+		}
+		draw(){
+	            ctx.beginPath();
+	            ctx.moveTo(this.cloudX, this.cloudY);
+	            ctx.bezierCurveTo(this.cloudX - 40, this.cloudY + 20, this.cloudX - 40, this.cloudY + 70, this.cloudX + 60, this.cloudY + 70);
+	            ctx.bezierCurveTo(this.cloudX + 80, this.cloudY + 100, this.cloudX + 150, this.cloudY + 100, this.cloudX + 170, this.cloudY + 70);
+	            ctx.bezierCurveTo(this.cloudX + 250, this.cloudY + 70, this.cloudX + 250, this.cloudY + 40, this.cloudtX + 220, this.cloudY + 20);
+	            ctx.bezierCurveTo(this.cloudX + 260, this.cloudY - 40, this.cloudX + 200, this.cloudY - 50, this.cloudX + 170, this.cloudY - 30);
+	            ctx.bezierCurveTo(this.cloudX + 150, this.cloudY - 75, this.cloudX + 80, this.cloudY - 60, this.cloudX + 80, this.cloudY - 30);
+	            ctx.bezierCurveTo(this.cloudX + 30, this.cloudY - 75, this.cloudX - 20, this.cloudY - 60, this.cloudX, this.cloudY);
+	            ctx.closePath();
+
+	            var grdCenterX = 260;
+	            var grdCenterY = 80;
+	            var grd = ctx.createRadialGradient(grdCenterX, grdCenterY, 10, grdCenterX, grdCenterY, 200);
+	            grd.addColorStop(0, "#F9F2F2"); // light blue
+	            grd.addColorStop(1, "#C7B9B9"); // dark blue
+	            ctx.fillStyle = grd;
+	            ctx.fill();
+
+
+            if (game.leftArr && !randomTile.hitPlayer) //now stops moving when playa is hit by obstacle
+            	this.cloudX+=5;
+
+            if(this.cloudX >= 700)
+            	this.cloudX = -300;
+            
+		}
+	}
+	cloud = new Cloud();
 	class Enemy 
 	{
 		constructor() 
@@ -364,8 +398,11 @@
 		}
 		draw() 
 		{
-			ctx.fillStyle = 'black';
-			ctx.fillRect(this.x, this.y, this.w, this.h)
+			if(enemy.currentLives != 0){
+				ctx.fillStyle = 'black';
+				ctx.fillRect(this.x, this.y, this.w, this.h)
+			}
+			
 		}
 		fall() 
 		{
@@ -416,6 +453,7 @@
 				game.upArrow = true;
 				player.stopAscend=false;
 				player.hangTime=5; 
+				enemy.currentLives = 0;
 				return;
 			}
 			
@@ -450,12 +488,15 @@
 
 		healthbar()
 		{
-			ctx.fillStyle = 'gray';
-			ctx.fillRect(this.x, this.y-this.w/3, this.w, 10);
-			if (this.currentLives == 1)
-				ctx.fillStyle = 'red';
-			else ctx.fillStyle = 'green';
-			ctx.fillRect(this.x, this.y-this.w/3, this.w * ((this.currentLives*100/this.maxLives)/100), 10);
+			if(this.currentLives != 0){
+				ctx.fillStyle = 'gray';
+				ctx.fillRect(this.x, this.y-this.w/3, this.w, 10);
+				if (this.currentLives == 1)
+					ctx.fillStyle = 'red';
+				else ctx.fillStyle = 'green';
+				ctx.fillRect(this.x, this.y-this.w/3, this.w * ((this.currentLives*100/this.maxLives)/100), 10);
+			}
+			
 		}
 	}
 
@@ -474,8 +515,10 @@
 		}
 		draw()
 		{
-			ctx.fillStyle='black';
-			ctx.fillRect(this.x,this.y,this.w,this.h);
+			if(enemy.currentLives != 0){
+				ctx.fillStyle='black';
+				ctx.fillRect(this.x,this.y,this.w,this.h);
+			}
 		}
 		sticktoenemy()
 		{
@@ -720,16 +763,17 @@
 	{
 		game.drawCanvas();
 		if(!gameStarted)
-		WaitForStart();
+			WaitForStart();
 		else
 		{
-		game.drawTiles();
-		randomTile.appearnow();
-		randomTile.playerOnTop();
-		EnemyProjectileOrder()
-		EnemyOrder();
-		PlayerOrder();
-		ProjectileOrder();
+			game.drawTiles();
+			cloud.draw();
+			randomTile.appearnow();
+			randomTile.playerOnTop();
+			EnemyProjectileOrder()
+			EnemyOrder();
+			PlayerOrder();
+			ProjectileOrder();
 		}
 	}
 	setInterval(recurring, 16.6666666667); // delenjeto sozdava stutters
