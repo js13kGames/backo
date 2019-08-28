@@ -12,8 +12,10 @@
 		</div>
 	</body>
 	<script>
-	// game variable
+	// GameState variables
 	var gameStarted = false;
+	var flashingTextTimer = 0;
+	var flashingTextTimer2 = 30;
 	// Canvas Globals
 	var canvas = document.getElementById('game');
 	var ctx = canvas.getContext('2d');
@@ -567,7 +569,20 @@
 			my_gradient.addColorStop(1, "purple");
 			ctx.fillStyle = my_gradient;
         ctx.textAlign = "center";
-        ctx.fillText("Click Enter to start game!", canvas.width/2, canvas.height/2); 
+		if (flashingTextTimer < 30)
+		{
+			ctx.fillText("Click Enter to start game!", canvas.width/2, canvas.height/2); 
+			flashingTextTimer++;
+		}
+        else if (flashingTextTimer2 > 0)
+		{
+			flashingTextTimer2--;
+        }
+		else 
+		{
+			flashingTextTimer=0;
+			flashingTextTimer2=30;
+		}
 		ctx.drawImage(characterSpriteDefault,250,350,20,20);
 	}
 	function recurring() 
