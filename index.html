@@ -222,7 +222,7 @@
 			this.gravityForce = 8;
 			this.rotationSpeed=0;
 			this.className = 'Projectile';
-		}
+					}
 		draw() 
 		{
 			if (this.ejected)
@@ -294,7 +294,7 @@
 			this.random = 0;
 			this.hitPlayer = false;
 			this.playerWasOnTop = false; //tells the player if the player is on top of object
-			this.className = 'RandomTile';
+			this.className = 'RandomTile';	
 		}
 
 		appearnow() 
@@ -343,6 +343,7 @@
 			this.verticalCollision = false;
 			this.negativeCollision = false;
 			this.className = 'Enemy';
+			this.decrement_lives_permission = 10; //fie
 		}
 		draw() 
 		{
@@ -404,9 +405,21 @@
 				ImpactX(randomTile, 15, true);
 				ImpactX(enemy, 15, true);
 				ImpactX(tiles, 15, true);
-				player.lives --;
+
+				if(this.decrement_lives_permission == 10) {
+					player.lives --;		
+					this.decrement_lives_permission--;
+				}
+				
 				return;
 			}
+
+			if(this.decrement_lives_permission == 0)
+				this.decrement_lives_permission = 10;					//fixes the bug that took 2 lives instead of 1
+			if(this.decrement_lives_permission != 10)
+				this.decrement_lives_permission--;
+
+
 		}
 		respawn() 
 		{
