@@ -407,10 +407,7 @@
 				ImpactX(enemy, 15, true);
 				ImpactX(tiles, 15, true);
 
-				if(this.decrement_lives_permission == 10) {
-					player.lives --;		
-					this.decrement_lives_permission--;
-				}
+				this.decrement_lives_permission = HitPlayer1(this.decrement_lives_permission);
 				
 				return;
 			}
@@ -423,12 +420,7 @@
 					WaitForStart();
 			}
 
-			if(this.decrement_lives_permission == 0)
-				this.decrement_lives_permission = 10;					//fixes the bug that took 2 lives instead of 1
-			if(this.decrement_lives_permission != 10)
-				this.decrement_lives_permission--;
-
-
+			this.decrement_lives_permission= HitPlayer2(this.decrement_lives_permission);
 
 		}
 		respawn() 
@@ -448,12 +440,92 @@
 			ctx.fillRect(this.x, this.y-this.w/3, this.w * ((this.currentLives*100/this.maxLives)/100), 10);
 		}
 	}
-	game = new Game(500, 500);
-	randomTile = new RandomTile(100, baseTile);
-	player = new Player();
-	enemy = new Enemy();
-	projectile = new Projectile(10, 10, 20, 20);
 
+	class EnemyProjectile
+	{
+		constructor()
+		{
+			this.x=enemy.x;
+			this.y=enemy.y;
+			this.w=enemy.w/3;
+			this.h=enemy.h/3;
+			this.ejected=false;
+			this.toShootOrNotToShoot=100;
+			this.decrement_lives_permission=10;
+              
+		}
+		draw()
+		{
+			ctx.fillStyle='black';
+			ctx.fillRect(this.x,this.y,this.w,this.h);
+		}
+		sticktoenemy()
+		{
+			if(!this.ejected)
+			{
+				this.x=enemy.x;
+			this.y=enemy.y+10;
+			}
+		}
+		decidetoshoot()
+		{
+			if(!this.ejected)
+			{
+				this.toShootOrNotToShoot -= 1;
+			    if (this.toShootOrNotToShoot < 1)
+			        this.ejected=true;
+			}
+		}
+		eject()
+		{
+			if (this.ejected)
+			{
+				this.x +=3;
+				if (game.leftArr && !randomTile.hitPlayer)
+				{
+					this.x+=5;
+				}
+			}
+		}
+		reset()
+		{
+			if (this.x > canvas.width +50)
+			{
+				this.ejected=false;
+				this.toShootOrNotToShoot=100;
+			}
+			
+		}
+		hitplayer()
+		{
+			if (this.ejected)
+	     	{
+		 		if ((Math.abs(this.x - player.x) < (this.w > player.w ? this.w : player.w) && this.y < player.y + player.h))
+		    	{
+			    	if (Math.abs(this.x - player.x) < (this.w > player.w ? this.w : player.w) && this.y < player.y + player.h) 
+		     	    {
+					this.decrement_lives_permission=HitPlayer1(this.decrement_lives_permission);
+				    }
+					this.ejected=false;
+					this.toShootOrNotToShoot=100;
+			    }
+			    this.decrement_lives_permission=HitPlayer2(this.decrement_lives_permission);
+		   	}
+		}
+
+       
+
+	}
+	game = new Game(500, 500);
+	function DeclareGameParameters()
+	{
+	    randomTile = new RandomTile(100, baseTile);
+	    player = new Player();
+	    enemy = new Enemy();
+     	projectile = new Projectile(10, 10, 20, 20);
+	    enemyProjectile = new EnemyProjectile();
+	}
+	
 	function eventHandler() 
 	{
 		window.addEventListener('keydown', function(event) 
@@ -532,6 +604,16 @@
 	  }		
 	}
 
+	function EnemyProjectileOrder()
+	{
+		enemyProjectile.hitplayer();
+		enemyProjectile.sticktoenemy();
+		enemyProjectile.decidetoshoot();
+		enemyProjectile.eject();
+		enemyProjectile.reset();
+		enemyProjectile.draw();
+	}
+
 	function rotateAndPaintImage ( context, image, angleInRad , positionX, positionY, axisX, axisY, width, height ) 
 	{
         context.translate( positionX, positionY );
@@ -540,6 +622,23 @@
         context.rotate( -angleInRad );
         context.translate( -positionX, -positionY );
 	}
+	function HitPlayer1(decrement_lives_permission)
+	{
+		if(decrement_lives_permission == 10) {
+					player.lives --;		
+					decrement_lives_permission--;
+				}
+		return decrement_lives_permission;
+	}
+	function HitPlayer2(decrement_lives_permission)
+	{
+		if(decrement_lives_permission == 0)
+				decrement_lives_permission = 10;					//fixes the bug that took 2 lives instead of 1
+			if(decrement_lives_permission != 10)
+				decrement_lives_permission--;
+		return decrement_lives_permission;
+	}
+ 
 	function EnemyOrder() 
 	{
 		enemy.draw();
@@ -597,6 +696,7 @@
 		}
 		//crta player ikona pod tekstot
 		ctx.drawImage(characterSpriteDefault,250,350,20,20);
+		DeclareGameParameters();
 	}
 	function recurring() 
 	{
@@ -608,8 +708,9 @@
 		game.drawTiles();
 		randomTile.appearnow();
 		randomTile.playerOnTop();
-		PlayerOrder();
+		EnemyProjectileOrder()
 		EnemyOrder();
+		PlayerOrder();
 		ProjectileOrder();
 		}
 	}
