@@ -156,7 +156,7 @@
 			this.gravityForce = 5;
 			this.className = 'Player';
 			this.enemyBounce = false;
-			this.playerWasOnTop = false;
+			this.playerWasOnTop = false; //tells the player if he is on top of an object
 			this.lives=3;
 			var timerForFirstImage=0; //used in animation function to store the number of cycles the current image has been active
 			var timerForSecondImage=0;
@@ -295,7 +295,6 @@
 			this.tile = tile;
 			this.random = 0;
 			this.hitPlayer = false;
-			this.playerWasOnTop = false; //tells the player if the player is on top of object
 			this.className = 'RandomTile';	
 		}
 
@@ -354,7 +353,7 @@
 		}
 		fall() 
 		{
-			if (!this.verticalCollision && !this.playerWasOnTop) 
+			if (!this.verticalCollision && !player.playerOnTop) 
 			{
 				this.y += 5;
 			}
