@@ -415,10 +415,19 @@
 				return;
 			}
 
+			if(player.lives == 0) {
+					enemy.x -= 30;
+					player.lives = 3;
+					gameStarted = false;
+					this.respawn();
+					WaitForStart();
+			}
+
 			if(this.decrement_lives_permission == 0)
 				this.decrement_lives_permission = 10;					//fixes the bug that took 2 lives instead of 1
 			if(this.decrement_lives_permission != 10)
 				this.decrement_lives_permission--;
+
 
 
 		}
