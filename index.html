@@ -571,15 +571,21 @@
         ctx.textAlign = "center";
 		if (flashingTextTimer < 30)
 		{
+			my_gradient.addColorStop(0, "yellow");
+			my_gradient.addColorStop(1, "purple");
 			ctx.fillText("Click Enter to start game!", canvas.width/2, canvas.height/2); 
 			flashingTextTimer++;
 		}
         else if (flashingTextTimer2 > 0)
 		{
+			my_gradient.addColorStop(0, "red");
+			my_gradient.addColorStop(1, "orange");
+			ctx.fillText("Click Enter to start game!", canvas.width/2, canvas.height/2); 
 			flashingTextTimer2--;
         }
 		else 
 		{
+			ctx.fillText("Click Enter to start game!", canvas.width/2, canvas.height/2); 
 			flashingTextTimer=0;
 			flashingTextTimer2=30;
 		}
