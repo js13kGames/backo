@@ -158,8 +158,10 @@
 			this.enemyBounce = false;
 			this.playerWasOnTop = false; //tells the player if he is on top of an object
 			this.lives=3;
-			var timerForFirstImage=0; //used in animation function to store the number of cycles the current image has been active
-			var timerForSecondImage=0;
+			this.timerForFirstImage=0; //used in animation function to store the number of cycles the current image has been active
+			this.timerForSecondImage=0;
+			this.hangTime = 5; //set to 5 also in lines 420 196
+			this.stopAscend = false;
 		}
 		draw() 
 		{
@@ -172,8 +174,11 @@
 		{
 			if (game.upArrow && this.verticalCollision) 
 			{
-				this.oldY += this.jumpForce;
-				this.y -= this.jumpForce;
+				if (!this.stopAscend) // ascend untill reaching jump height
+				{
+					this.oldY += this.jumpForce;
+				    this.y -= this.jumpForce;	
+				} 
 			}
 		}
 		ascertainGravity() 
@@ -187,11 +192,22 @@
 				this.jumpHeight = 90;
 				this.verticalCollision = true;
 				this.oldY = 0;
+				this.stopAscend=false;
+				this.hangTime=5; 
+				
 			} 
 			else if (this.oldY === this.jumpHeight) //stop ascending when reaching max jump height
 			{
-				game.upArrow = false;
-				this.verticalCollision = false;
+				if (this.hangTime == 0)
+				{
+					game.upArrow = false;
+				    this.verticalCollision = false;
+				}
+				else 
+				{
+					this.stopAscend=true;
+					this.hangTime--;
+				}
 			}
 		}
 		processLives(){
@@ -398,6 +414,8 @@
 				player.jumpHeight = 180;
 				player.verticalCollision = true;
 				game.upArrow = true;
+				player.stopAscend=false;
+				player.hangTime=5; 
 				return;
 			}
 			
