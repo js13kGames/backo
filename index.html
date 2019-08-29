@@ -19,7 +19,11 @@
 	// Canvas Globals
 	var canvas = document.getElementById('game');
 	var ctx = canvas.getContext('2d');
-
+    //color gradient
+	var gradient = ctx.createLinearGradient(0, 0, canvas.width, 0);
+        gradient.addColorStop("0"," magenta");
+        gradient.addColorStop("0.5", "yellow");
+        gradient.addColorStop("1.0", "orange");
 	// Image Globals
 	var characterImage = new Image();
 	var characterSpriteDefault = new Image();
@@ -162,6 +166,8 @@
 			this.timerForSecondImage=0;
 			this.hangTime = 5; //set to 5 also in lines 420 196
 			this.stopAscend = false;
+			this.currentScore = 0;
+			this.scorePerKill = 50;
 		}
 		draw() 
 		{
@@ -222,6 +228,10 @@
 		}
 		ascertainCollision()
 		{
+		}
+		addtoscore()
+		{
+			this.currentScore += this.scorePerKill;
 		}
 	}
 	class Projectile 
@@ -434,7 +444,10 @@
 				this.negativeCollision = false;
 				this.currentLives--;
 				if (this.currentLives < 1)
+				{
+					player.addtoscore();
 					return this.respawn();
+				}	
 				ImpactX(enemy, 15);
 				return;
 			}
@@ -454,6 +467,7 @@
 				player.stopAscend=false;
 				player.hangTime=5; 
 				enemy.currentLives = 0;
+				player.addtoscore();
 				this.respawn();
 				return;
 			}
@@ -586,8 +600,17 @@
 	    enemy = new Enemy();
      	projectile = new Projectile(10, 10, 20, 20);
 	    enemyProjectile = new EnemyProjectile();
+	    
 	}
 	
+    function ScoreText()
+	{
+		ctx.font = "35px Impact";
+		ctx.fillStyle = gradient;
+		ctx.textAlign = "left";
+		ctx.fillText("Score: " + player.currentScore, 7, 35); 
+	}
+
 	function eventHandler() 
 	{
 		window.addEventListener('keydown', function(event) 
@@ -726,9 +749,10 @@
 	{
 		ctx.font = "35px Impact";
 		//ime na gejm text
-        var my_gradient = ctx.createLinearGradient(0, 0, 320, 0);
-		my_gradient.addColorStop(0, "purple");
-		my_gradient.addColorStop(1, "yellow");
+        var my_gradient = ctx.createLinearGradient(0, 0, canvas.width, 0);
+		my_gradient.addColorStop("0"," magenta");
+		my_gradient.addColorStop("0.5", "yellow");
+		my_gradient.addColorStop("1.0", "purple");
 		ctx.fillStyle = my_gradient;
 		ctx.textAlign = "center";
         ctx.fillText("Ime na gejmot", canvas.width/2, canvas.height/2-100); 
@@ -738,20 +762,25 @@
         ctx.textAlign = "center";
 		if (flashingTextTimer < 30) //edna boja 30 ciklusi
 		{
-			my_gradient.addColorStop(0, "yellow");
-			my_gradient.addColorStop(1, "purple");
+			my_gradient.addColorStop("0"," magenta");
+		    my_gradient.addColorStop("0.5", "yellow");
+		    my_gradient.addColorStop("1.0", "purple");
 			ctx.fillText("Click Enter to start game!", canvas.width/2, canvas.height/2); 
 			flashingTextTimer++;
 		}
         else if (flashingTextTimer2 > 0) //druga boja 30 ciklusi
 		{
-			my_gradient.addColorStop(0, "red");
-			my_gradient.addColorStop(1, "orange");
+			my_gradient.addColorStop("0"," magenta");
+		    my_gradient.addColorStop("0.5", "orange");
+		    my_gradient.addColorStop("1.0", "blue");
 			ctx.fillText("Click Enter to start game!", canvas.width/2, canvas.height/2); 
 			flashingTextTimer2--;
         }
 		else 
 		{
+			my_gradient.addColorStop("0"," magenta");
+		    my_gradient.addColorStop("0.5", "orange");
+		    my_gradient.addColorStop("1.0", "purple");
 			ctx.fillText("Click Enter to start game!", canvas.width/2, canvas.height/2); 
 			flashingTextTimer=0;
 			flashingTextTimer2=30;
@@ -775,6 +804,7 @@
 			EnemyOrder();
 			PlayerOrder();
 			ProjectileOrder();
+			ScoreText();
 		}
 	}
 	setInterval(recurring, 16.6666666667); // delenjeto sozdava stutters
