@@ -405,6 +405,11 @@
 			this.negativeCollision = false;
 			this.className = 'Enemy';
 			this.decrement_lives_permission = 10; //fie
+			//random movement
+			this.randomXdir = -1;
+			this.randomMovement=0;
+			this.moving = false;
+			this.randomMovementCountdown = 10;
 		}
 		draw() 
 		{
@@ -513,6 +518,34 @@
 			}
 			
 		}
+		randomlymove()
+		{
+			this.randomMovement = Math.random()*50+1;
+			if (this.randomMovement>48.9)
+			{
+				this.moving=true;
+				this.randomMovementCountdown=10;
+			}
+
+			if (Math.abs(this.x - randomTile.x) <= (this.w > randomTile.w ? this.w : randomTile.w)) 
+			{
+				this.randomXdir *=-1
+				this.x += 7*this.randomXdir;
+			}
+			
+			else if(this.moving && this.randomMovementCountdown > 0)
+			{
+				this.x += 3*this.randomXdir;
+				this.randomMovementCountdown--;
+			}
+			else 
+			{
+				this.moving=false;
+				this.randomMovementCountdown=50;
+				this.randomXdir *= -1;
+			}
+		}
+ 
 	}
 
 	class EnemyProjectile
@@ -731,6 +764,7 @@
 		enemy.fall();
 		enemy.move();
 		enemy.ascertainCollision();
+		enemy.randomlymove();
 	}
 	function ProjectileOrder() 
 	{
