@@ -25,6 +25,7 @@
         gradient.addColorStop("0.5", "yellow");
         gradient.addColorStop("1.0", "orange");
 	// Image Globals
+	var emptyImage = new Image();
 	var characterImage = new Image();
 	var characterSpriteDefault = new Image();
 	var characterSpriteWalking = new Image();
@@ -96,7 +97,6 @@
 		{
 			if (this.leftArr && !randomTile.hitPlayer) //now stops moving when playa is hit by obstacle
 			{ 
-				// console.log(tiles);
 				var lastTile = tiles[tiles.length - 1];
 				tiles.push(new Tile(lastTile.x - this.primitive_tile_width, 475, 'basic'));
 				for (var i = 0; i < tiles.length; i++) 
@@ -108,7 +108,7 @@
 				// for (var i = 0; i < tiles.length; i++) 
 				// {
 				// 	if(tiles[i].x <= -100 || tiles[i].x >= 600)			//removing elements from the tiles array;
-				// 		tiles.splice(i,1);
+				// 		tiles.splice(i,1);								//causes bug
 				// }
 			} 
 			else
@@ -168,9 +168,15 @@
 			this.stopAscend = false;
 			this.currentScore = 0;
 			this.scorePerKill = 50;
+			this.power = null;
 		}
 		draw() 
 		{
+			if(this.power == 'invulnerable') {
+				animatePlayer(characterSpriteDefault, emptyImage, ctx, this.x,this.y,this.w,this.h); // player blinks when invulnerable
+				return;
+			}
+
 			if(game.leftArr && !randomTile.hitPlayer) // if player "moving" do the animation
 			    animatePlayer(characterSpriteDefault, characterSpriteWalking, ctx, this.x,this.y,this.w,this.h);
 			else
@@ -220,17 +226,10 @@
 			this.drawLives();
 		}
 		drawLives(){
-			for(let i = 1; i <= this.lives; i++){
+			for(let i = 1; i <= this.lives; i++)
 				ctx.drawImage(heart,game.canvas_width - i*25,10,16,16);
-			}
-			
-
 		}
-		ascertainCollision()
-		{
-		}
-		addtoscore()
-		{
+		addtoscore() {
 			this.currentScore += this.scorePerKill;
 		}
 	}
@@ -348,7 +347,7 @@
 
       		if(this.x >= 800) {				// when the current power gets out of bounds, another one can be spawned 
       			this.spawned = false; 
-      			this.x = -100
+      			this.x = -100;
       		}
 		}
 		create_power(){
@@ -358,16 +357,25 @@
 					let rng = Math.random();
 					if(rng <= 0.005) {
 						let rngType = Math.random();
-						if(rngType >= 0.4)
+						if(rngType >= 0)
 							this.type = 'invulnerable'
 						else
 							this.type = 'beast';
-						console.log("Can spawn")
+
 						this.spawned = true;
 					}
 				}
 			} else 
 				this.draw();
+		}
+		check_collision(){
+			if(this.x+this.r >= player.x && 
+				this.x+this.r <= player.x + player.w &&				// collision detection
+				player.y == game.canvas_height - game.primitive_tile_height - player.h) {
+					player.power = this.type;
+					this.spawned = false; 				// power dissapears,
+					this.x = -100;						// player gains the power
+			}
 		}
 
 	}
@@ -389,6 +397,7 @@
 		{
 			ctx.drawImage(this.tile, this.x, this.y, this.w, this.h);
 			if (game.leftArr && !this.hitPlayer) this.x += player.velocity;
+
 			if (this.x > 600)
 			{
 				this.appear = false; //appearn() will stop being called
@@ -397,7 +406,7 @@
 				this.h = 10+10*Math.floor((Math.random()*5)+1); //new object height //must at least 20 and divisible by 10
 				this.y = 445 - (30 * (this.h / 30 - 1)); //adjust y to new height   
 			}
-			if (Math.abs(this.x - player.x) == this.w   && player.x > this.x) //when player and object collide on x axis
+			if (Math.abs(this.x - player.x) == this.w   && player.x > this.x && player.power != 'invulnerable') //when player and object collide on x axis
 			{
 				if (player.y + player.h / 2 > (this.y - this.h / 2)) this.hitPlayer = true; // if player isnt in the air over the obstacle
 				else this.hitPlayer = false;
@@ -405,7 +414,7 @@
 		}
 		playerOnTop() 
 		{
-			if (Math.abs(this.y - player.y) == 30 && Math.abs(this.x - player.x) < this.w &&player.x > this.x-20)
+			if (Math.abs(this.y - player.y) == 30 && Math.abs(this.x - player.x) < this.w &&player.x > this.x-20 && player.power != 'invulnerable')
 				player.playerWasOnTop = true;
 			else if (player.playerWasOnTop) 
 			{
@@ -484,7 +493,7 @@
 		{
 			if (!this.verticalCollision && !player.playerOnTop) 
 			{
-				this.y += 5;
+				this.y += 5;			//gravity pull
 			}
 			if (this.y >= 445 + (30 - this.h)) 
 				this.verticalCollision = true;
@@ -525,7 +534,7 @@
 				return;
 			} 
 
-			if (Math.abs(this.x - player.x) < (this.w > player.w ? this.w : player.w) && this.y == player.y + player.h) // player Y collision causes a bounce
+			if (Math.abs(this.x - player.x) < (this.w > player.w ? this.w : player.w) && this.y == player.y + player.h && player.power != 'invulnerable') // player Y collision causes a bounce
 			{
 				player.jumpHeight = 180;
 				player.verticalCollision = true;
@@ -538,7 +547,7 @@
 				return;
 			}
 			
-			if (Math.abs(this.x - player.x) < (this.w > player.w ? this.w : player.w) && this.y < player.y + player.h) // player X collision
+			if (Math.abs(this.x - player.x) < (this.w > player.w ? this.w : player.w) && this.y < player.y + player.h && player.power != 'invulnerable') // player X collision
 			{
 				ImpactX(randomTile, 15, true);
 				ImpactX(enemy, 15, true);
@@ -668,12 +677,13 @@
 		{
 			if (this.ejected)
 	     	{
-		 		if ((Math.abs(this.x - player.x) < (this.w > player.w ? this.w : player.w) && this.y < player.y + player.h))
+		 		if ((Math.abs(this.x - player.x) < (this.w > player.w ? this.w : player.w) && this.y < player.y + player.h) && player.power != 'invulnerable')
 		    	{
-			    	if (Math.abs(this.x - player.x) < (this.w > player.w ? this.w : player.w) && this.y < player.y + player.h) 
+			    	if (Math.abs(this.x - player.x) < (this.w > player.w ? this.w : player.w) && this.y < player.y + player.h && player.power != 'invulnerable') 
 		     	    {
-					this.decrement_lives_permission=HitPlayer1(this.decrement_lives_permission);
+						this.decrement_lives_permission=HitPlayer1(this.decrement_lives_permission);
 				    }
+
 					this.ejected=false;
 					this.toShootOrNotToShoot=100;
 			    }
@@ -887,6 +897,7 @@
 		else
 		{
 			power.create_power();
+			power.check_collision();
 			game.drawTiles();
 			cloud.draw();
 			randomTile.appearnow();
