@@ -13,6 +13,7 @@
 	</body>
 	<script>
 	// GameState variables
+	var current_player_mode = null;
 	var gameStarted = false;
 	var flashingTextTimer = 0; //se koristat vo WaitForStart() za broenje na ciklusi
 	var flashingTextTimer2 = 30;
@@ -87,11 +88,21 @@
 		}
 		drawCanvas() 
 		{
-			var my_gradient = ctx.createLinearGradient(0, 0, 0, 320);
-			my_gradient.addColorStop(0, "darkblue");
-			my_gradient.addColorStop(1, "lightblue");
-			ctx.fillStyle = my_gradient;
-			ctx.fillRect(0, 0, this.canvas_width, this.canvas_height);
+			if(current_player_mode != 'beast') {
+				var my_gradient = ctx.createLinearGradient(0, 0, 0, 320);
+				my_gradient.addColorStop(0, "darkblue");
+				my_gradient.addColorStop(1, "lightblue");
+				ctx.fillStyle = my_gradient;
+				ctx.fillRect(0, 0, this.canvas_width, this.canvas_height);
+			}
+			else {
+				var my_gradient = ctx.createLinearGradient(0, 0, 0, 320);
+				my_gradient.addColorStop(0, "darkblue");
+				my_gradient.addColorStop(1, "saddlebrown");
+				ctx.fillStyle = my_gradient;
+				ctx.fillRect(0, 0, this.canvas_width, this.canvas_height);
+			}
+				
 		}
 		drawTiles() 
 		{
@@ -259,8 +270,11 @@
 		{
 			if(player.power == 'beast') {
 				this.x = this.x - player.w - 10;
-				this.acceleration = 3
+				this.acceleration = 3;
 			}
+			if(player.power == 'beast')
+				this.acceleration = 7 	// when player goes from beast to invulnerable, reset the accel of the projectile
+
 			if (this.ejected)
 			{
 				rotateAndPaintImage(ctx,karambit,this.rotationSpeed,this.x,this.y,this.w/2,this.h/2,this.w,this.h)
@@ -317,7 +331,7 @@
 			}
 		}
 	}
-	class Power {
+	class PowerUp {
 		constructor(){
 			this.x=-100;
 			this.y=350;
@@ -355,7 +369,6 @@
 				this.y+=5;
 			if (game.leftArr && !randomTile.hitPlayer)	// move right
       			this.x+=5;
-
       		if(this.x >= 800) {				// when the current power gets out of bounds, another one can be spawned 
       			this.spawned = false; 
       			this.x = -100;
@@ -366,10 +379,10 @@
 			if(!this.spawned) {
 				if (game.leftArr && !randomTile.hitPlayer) { 
 					let rng = Math.random();
-					if(rng <= 0.005) {
+					if(rng <= 0.005) {					// chance to spawn a powerup
 						let rngType = Math.random();
-						if(rngType >= 1)
-							this.type = 'invulnerable'
+						if(rngType >= 0.7)
+							this.type = 'invulnerable'		//70 chance of getting the invulnerable powerup, 30 for beast mode
 						else
 							this.type = 'beast';
 
@@ -380,12 +393,14 @@
 				this.draw();
 		}
 		check_collision(){
-			if(this.x+this.r >= player.x && 
-				this.x+this.r <= player.x + player.w &&				// collision detection
-				player.y == game.canvas_height - game.primitive_tile_height - player.h) {
+			if((this.x+this.r >= player.x && this.x+this.r <= player.x + player.w) ||
+				(player.x+player.w >= this.x && player.x+player.w <= this.x+this.r) &&
+				 player.y+player.h >= 465)
+				 {
 					player.power = this.type;
-					this.spawned = false; 				// power dissapears,
-					this.x = -100;						// player gains the power
+					current_player_mode = this.type; 	// global variable (needed to change background)
+					this.spawned = false; 				// power dissapears, player gains the power
+					this.x = -100;						
 			}
 		}
 	}
@@ -493,6 +508,9 @@
 		}
 		draw() 
 		{
+			// if(player.power == 'beast'){
+			// 	this.maxLives = 1;
+			// }
 			if(enemy.currentLives != 0){
 				ctx.fillStyle = 'black';
 				ctx.fillRect(this.x, this.y, this.w, this.h)
@@ -562,7 +580,7 @@
 				ImpactX(randomTile, 15, true);
 				ImpactX(enemy, 15, true);
 				ImpactX(tiles, 15, true);
-
+				ImpactX(cloud, 15, true)
 				this.decrement_lives_permission = HitPlayer1(this.decrement_lives_permission);
 				
 				return;
@@ -593,7 +611,8 @@
 				ctx.fillRect(this.x, this.y-this.w/3, this.w, 10);
 				if (this.currentLives == 1)
 					ctx.fillStyle = 'red';
-				else ctx.fillStyle = 'green';
+				else 
+				ctx.fillStyle = 'green';
 				ctx.fillRect(this.x, this.y-this.w/3, this.w * ((this.currentLives*100/this.maxLives)/100), 10);
 			}
 			
@@ -822,7 +841,6 @@
         context.rotate( -angleInRad );
         context.translate( -positionX, -positionY );
 	}
-	
 	function HitPlayer1(decrement_lives_permission)
 	{
 		if(decrement_lives_permission == 10) {
@@ -905,7 +923,7 @@
 		ctx.drawImage(characterSpriteDefault,250,350,20,20);
 		DeclareGameParameters();
 	}
-	power = new Power();
+	powerup = new PowerUp();
 	function recurring() 
 	{
 		game.drawCanvas();
@@ -913,8 +931,9 @@
 			WaitForStart();
 		else
 		{
-			// power.create_power();
-			// power.check_collision();
+			powerup.create_power();
+			powerup.check_collision();
+			power_reset();
 			game.drawTiles();
 			cloud.draw();
 			randomTile.appearnow();
@@ -922,7 +941,6 @@
 			EnemyProjectileOrder()
 			EnemyOrder();
 			PlayerOrder();
-			player.power = 'beast'
 			ProjectileOrder();
 			ScoreText();
 		}
