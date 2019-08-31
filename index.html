@@ -180,6 +180,7 @@
 			this.currentScore = 0;
 			this.scorePerKill = 50;
 			this.power = null;
+			this.powerEnderCountdown=300;
 		}
 		draw() 
 		{
@@ -247,6 +248,19 @@
 		}
 		addtoscore() {
 			this.currentScore += this.scorePerKill;
+		}
+		powerender()
+		{
+			if (this.power!=null)
+			{
+				this.powerEnderCountdown--;
+				if(this.powerEnderCountdown==0)
+				{
+					this.power = null;
+					current_player_mode = null;
+				}
+				
+			}
 		}
 	}
 	class Projectile 
@@ -397,6 +411,7 @@
 				(player.x+player.w >= this.x && player.x+player.w <= this.x+this.r) &&
 				 player.y+player.h >= 465)
 				 {
+					player.powerEnderCountdown=300;
 					player.power = this.type;
 					current_player_mode = this.type; 	// global variable (needed to change background)
 					this.spawned = false; 				// power dissapears, player gains the power
@@ -599,7 +614,7 @@
 		}
 		respawn() 
 		{
-			this.x = randomTile.x - 200;
+			this.x = -300;
 			this.y = game.canvas_height - this.h - game.primitive_tile_height;
 			this.currentLives = this.maxLives;
 		}
@@ -878,9 +893,11 @@
 		player.jump();
 		player.draw();
 		player.processLives();
+		player.powerender()
 	}
 	function WaitForStart()
 	{
+		current_player_mode = null;
 		ctx.font = "35px Impact";
 		//ime na gejm text
         var my_gradient = ctx.createLinearGradient(0, 0, canvas.width, 0);
@@ -933,7 +950,6 @@
 		{
 			powerup.create_power();
 			powerup.check_collision();
-			power_reset();
 			game.drawTiles();
 			cloud.draw();
 			randomTile.appearnow();
