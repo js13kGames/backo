@@ -173,10 +173,15 @@
 		draw() 
 		{
 			if(this.power == 'invulnerable') {
-				animatePlayer(characterSpriteDefault, emptyImage, ctx, this.x,this.y,this.w,this.h); // player blinks when invulnerable
+				animatePlayer(characterSpriteDefault, emptyImage, ctx, this.x,this.y,this.w,this.h); 
+				// player blinks when invulnerable
 				return;
 			}
-
+			if(this.power == 'beast') {
+				mirrorImage(ctx,characterSpriteDefault,this.x,this.y,this.w,this.h);
+				// player sprite mirrored 
+				return;
+			}
 			if(game.leftArr && !randomTile.hitPlayer) // if player "moving" do the animation
 			    animatePlayer(characterSpriteDefault, characterSpriteWalking, ctx, this.x,this.y,this.w,this.h);
 			else
@@ -249,9 +254,13 @@
 			this.gravityForce = 8;
 			this.rotationSpeed=0;
 			this.className = 'Projectile';
-					}
+		}
 		draw() 
 		{
+			if(player.power == 'beast') {
+				this.x = this.x - player.w - 10;
+				this.acceleration = 3
+			}
 			if (this.ejected)
 			{
 				rotateAndPaintImage(ctx,karambit,this.rotationSpeed,this.x,this.y,this.w/2,this.h/2,this.w,this.h)
@@ -313,8 +322,10 @@
 			this.x=-100;
 			this.y=350;
 			this.r=13;
-			this.type = null; // #1 invulnerable player, #2 player turns around, can shoot straight, and kills enemies with 1 shot
-			this.spawned = false;
+			this.type = null; 	// #1 invulnerable player, #2 player turns around(now facing straight left), can shoot straight, and kills 	
+			this.spawned = false;	//enemies with 1 shot a.k.a beast mode
+									// powers should last 3-4 seconds 
+			
 		}
 		draw(){
 			if(this.spawned) {
@@ -357,7 +368,7 @@
 					let rng = Math.random();
 					if(rng <= 0.005) {
 						let rngType = Math.random();
-						if(rngType >= 0)
+						if(rngType >= 1)
 							this.type = 'invulnerable'
 						else
 							this.type = 'beast';
@@ -377,7 +388,6 @@
 					this.x = -100;						// player gains the power
 			}
 		}
-
 	}
 	class RandomTile 
 	{
@@ -469,7 +479,7 @@
 			this.h = player.h * 1.5;
 			this.x = 250;
 			this.y = game.canvas_height - game.primitive_tile_height - this.h - 5;
-			this.maxLives=3;
+			this.maxLives=2;
 			this.currentLives = this.maxLives;
 			this.verticalCollision = false;
 			this.negativeCollision = false;
@@ -787,7 +797,13 @@
 		player.timerForSecondImage=0;
 	  }		
 	}
-
+	function mirrorImage(ctx, spriteImage, sourceX, sourceY, spriteWidth, spriteHeight){
+		ctx.save();
+		ctx.translate(spriteWidth/2, spriteHeight/2-15);
+	    ctx.scale(-1,1)
+	    ctx.drawImage(spriteImage, -sourceX, sourceY, spriteWidth, spriteHeight);
+	    ctx.restore();
+	}
 	function EnemyProjectileOrder()
 	{
 		enemyProjectile.hitplayer();
@@ -806,6 +822,7 @@
         context.rotate( -angleInRad );
         context.translate( -positionX, -positionY );
 	}
+	
 	function HitPlayer1(decrement_lives_permission)
 	{
 		if(decrement_lives_permission == 10) {
@@ -896,8 +913,8 @@
 			WaitForStart();
 		else
 		{
-			power.create_power();
-			power.check_collision();
+			// power.create_power();
+			// power.check_collision();
 			game.drawTiles();
 			cloud.draw();
 			randomTile.appearnow();
@@ -905,6 +922,7 @@
 			EnemyProjectileOrder()
 			EnemyOrder();
 			PlayerOrder();
+			player.power = 'beast'
 			ProjectileOrder();
 			ScoreText();
 		}
