@@ -309,7 +309,68 @@
 			}
 		}
 	}
+	class Power {
+		constructor(){
+			this.x=-100;
+			this.y=350;
+			this.r=13;
+			this.type = null; // #1 invulnerable player, #2 player turns around, can shoot straight, and kills enemies with 1 shot
+			this.spawned = false;
+		}
+		draw(){
+			if(this.spawned) {
+				if(this.type == 'invulnerable') {			// invulnerable player
+					ctx.beginPath();						// can't be touched by enemies, no collision whatsoever
+		      		ctx.arc(this.x, this.y, this.r, 0, 2 * Math.PI, false);
+		      		ctx.fillStyle = 'white';
+		      		ctx.stroke();
+		      		ctx.fill();
 
+		      		this.move();
+	      		}
+	      		else if (this.type == 'beast')  {			// beast player
+	      			ctx.beginPath();						// player turns around, shoots straight and kills enemies with 1 shot
+		      		ctx.arc(this.x, this.y, this.r, 0, 2 * Math.PI, false);
+		      		ctx.fillStyle = 'black';
+		      		ctx.stroke();
+		      		ctx.fill();
+
+		      		this.move();
+	      		}
+			}
+			
+		}
+		move(){
+			if(this.y + this.r <= 475)			// fall on the ground	
+				this.y+=5;
+			if (game.leftArr && !randomTile.hitPlayer)	// move right
+      			this.x+=5;
+
+      		if(this.x >= 800) {				// when the current power gets out of bounds, another one can be spawned 
+      			this.spawned = false; 
+      			this.x = -100
+      		}
+		}
+		create_power(){
+
+			if(!this.spawned) {
+				if (game.leftArr && !randomTile.hitPlayer) { 
+					let rng = Math.random();
+					if(rng <= 0.005) {
+						let rngType = Math.random();
+						if(rngType >= 0.4)
+							this.type = 'invulnerable'
+						else
+							this.type = 'beast';
+						console.log("Can spawn")
+						this.spawned = true;
+					}
+				}
+			} else 
+				this.draw();
+		}
+
+	}
 	class RandomTile 
 	{
 		constructor(w, tile) 
@@ -545,9 +606,7 @@
 				this.randomXdir *= -1;
 			}
 		}
- 
 	}
-
 	class EnemyProjectile
 	{
 		constructor()
@@ -621,9 +680,6 @@
 			    this.decrement_lives_permission=HitPlayer2(this.decrement_lives_permission);
 		   	}
 		}
-
-       
-
 	}
 	game = new Game(500, 500);
 	function DeclareGameParameters()
@@ -756,7 +812,6 @@
 				decrement_lives_permission--;
 		return decrement_lives_permission;
 	}
- 
 	function EnemyOrder() 
 	{
 		enemy.draw();
@@ -823,6 +878,7 @@
 		ctx.drawImage(characterSpriteDefault,250,350,20,20);
 		DeclareGameParameters();
 	}
+	power = new Power();
 	function recurring() 
 	{
 		game.drawCanvas();
@@ -830,6 +886,7 @@
 			WaitForStart();
 		else
 		{
+			power.create_power();
 			game.drawTiles();
 			cloud.draw();
 			randomTile.appearnow();
