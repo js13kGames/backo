@@ -180,7 +180,7 @@
 			this.currentScore = 0;
 			this.scorePerKill = 50;
 			this.power = null;
-			this.powerEnderCountdown=300;
+			this.powerEnderCountdown=300;			
 		}
 		draw() 
 		{
@@ -347,9 +347,9 @@
 	}
 	class PowerUp {
 		constructor(){
-			this.x=-100;
+			this.x = -275;
 			this.y=350;
-			this.r=13;
+			this.r=6;
 			this.type = null; 	// #1 invulnerable player, #2 player turns around(now facing straight left), can shoot straight, and kills 	
 			this.spawned = false;	//enemies with 1 shot a.k.a beast mode
 									// powers should last 3-4 seconds 
@@ -376,10 +376,9 @@
 		      		this.move();
 	      		}
 			}
-			
 		}
 		move(){
-			if(this.y + this.r <= 475)			// fall on the ground	
+			if(this.y + this.r <= 470)			// fall on the ground	
 				this.y+=5;
 			if (game.leftArr && !randomTile.hitPlayer)	// move right
       			this.x+=5;
@@ -444,12 +443,14 @@
 				this.w=20 * Math.floor((Math.random()*5)+1) //must be bigger than 20 and divisible by 20
 				this.x = -100; // reset at original position on the left
 				this.h = 10+10*Math.floor((Math.random()*5)+1); //new object height //must at least 20 and divisible by 10
-				this.y = 445 - (30 * (this.h / 30 - 1)); //adjust y to new height   
+				this.y = 445 - (30 * (this.h / 30 - 1)); //adjust y to new height
 			}
-			if (Math.abs(this.x - player.x) == this.w   && player.x > this.x && player.power != 'invulnerable') //when player and object collide on x axis
+
+			if (Math.abs(this.x - player.x) == this.w && player.x > this.x && player.power != 'invulnerable') //when player and object collide on x axis
 			{
 				if (player.y + player.h / 2 > (this.y - this.h / 2)) this.hitPlayer = true; // if player isnt in the air over the obstacle
 				else this.hitPlayer = false;
+				return;
 			}
 		}
 		playerOnTop() 
@@ -493,7 +494,7 @@
 
 
             if (game.leftArr && !randomTile.hitPlayer) //now stops moving when playa is hit by obstacle
-            	this.cloudX+=5;
+            	this.cloudX += player.velocity;
 
             if(this.cloudX >= 700)
             	this.cloudX = -300;
@@ -507,7 +508,7 @@
 		{
 			this.w = player.w * 2;
 			this.h = player.h * 1.5;
-			this.x = 250;
+			this.x = -250;
 			this.y = game.canvas_height - game.primitive_tile_height - this.h - 5;
 			this.maxLives=2;
 			this.currentLives = this.maxLives;
@@ -614,7 +615,7 @@
 		}
 		respawn() 
 		{
-			this.x = -300;
+			this.x = randomTile.x - this.w - randomTile.w;
 			this.y = game.canvas_height - this.h - game.primitive_tile_height;
 			this.currentLives = this.maxLives;
 		}
@@ -671,7 +672,6 @@
 			this.ejected=false;
 			this.toShootOrNotToShoot=100;
 			this.decrement_lives_permission=10;
-              
 		}
 		draw()
 		{
@@ -715,7 +715,11 @@
 				this.ejected=false;
 				this.toShootOrNotToShoot=100;
 			}
-			
+			if (this.x + this.w > randomTile.x && this.y + this.h > randomTile.y) 
+			{
+				this.ejected = false;
+				this.toShootOrNotToShoot = 100;
+			}
 		}
 		hitplayer()
 		{
@@ -733,6 +737,7 @@
 			    }
 			    this.decrement_lives_permission=HitPlayer2(this.decrement_lives_permission);
 		   	}
+			   
 		}
 	}
 	game = new Game(500, 500);
@@ -743,7 +748,6 @@
 	    enemy = new Enemy();
      	projectile = new Projectile(10, 10, 20, 20);
 	    enemyProjectile = new EnemyProjectile();
-	    
 	}
 	
     function ScoreText()
@@ -809,7 +813,6 @@
 			if (++x === repetitions) 
 			{
 				if (reverse) player.velocity = 5;
-
 				intervalOngoing = false;
 				window.clearInterval(ImpactXInterval);
 			}
@@ -846,6 +849,30 @@
 		enemyProjectile.eject();
 		enemyProjectile.reset();
 		enemyProjectile.draw();
+	}
+
+	function utvrdiSudir(entity1, entity2)
+	{
+		let larger_width_entity = entity1.w > entity2.w ? entity1 : entity2;
+		let smaller_width_entity = entity1.w > entity2.w ? entity2 : entity1;
+
+		let larger_height_entity = entity1.h > entity2.h ? entity1 : entity2;
+		let smaller_height_entity = entity1.h > entity2.h ? entity2 : entity1;
+
+		if (entity1 instanceof Player || entity2 instanceof Player)
+		{
+			if (larger_width_entity.x + larger_width_entity.w >= smaller_width_entity.x)
+				if (smaller_height_entity.y + smaller_height_entity.h > larger_height_entity.y) // this.y + this.h > randomTile.y
+					return true;
+		}
+		else
+		{
+			if (larger_width_entity.x + larger_width_entity.w <= smaller_width_entity.x)
+				if (larger_height_entity.y + larger_height_entity.h >= smaller_height_entity.y) 
+					return true;
+		}
+
+		return false;
 	}
 
 	function rotateAndPaintImage ( context, image, angleInRad , positionX, positionY, axisX, axisY, width, height ) 
@@ -906,7 +933,7 @@
 		my_gradient.addColorStop("1.0", "purple");
 		ctx.fillStyle = my_gradient;
 		ctx.textAlign = "center";
-        ctx.fillText("Ime na gejmot", canvas.width/2, canvas.height/2-100); 
+        ctx.fillText("„Бак“", canvas.width/2, canvas.height/2-100); 
 		//start game text
 		my_gradient = ctx.createLinearGradient(0, 0, 320, 0);
 		ctx.fillStyle = my_gradient;
@@ -916,7 +943,7 @@
 			my_gradient.addColorStop("0"," magenta");
 		    my_gradient.addColorStop("0.5", "yellow");
 		    my_gradient.addColorStop("1.0", "purple");
-			ctx.fillText("Click Enter to start game!", canvas.width/2, canvas.height/2); 
+			ctx.fillText("PRESS ENTER TO START!", canvas.width/2, canvas.height/2); 
 			flashingTextTimer++;
 		}
         else if (flashingTextTimer2 > 0) //druga boja 30 ciklusi
@@ -924,7 +951,7 @@
 			my_gradient.addColorStop("0"," magenta");
 		    my_gradient.addColorStop("0.5", "orange");
 		    my_gradient.addColorStop("1.0", "blue");
-			ctx.fillText("Click Enter to start game!", canvas.width/2, canvas.height/2); 
+			ctx.fillText("PRESS ENTER TO START!", canvas.width/2, canvas.height/2); 
 			flashingTextTimer2--;
         }
 		else 
@@ -932,12 +959,12 @@
 			my_gradient.addColorStop("0"," magenta");
 		    my_gradient.addColorStop("0.5", "orange");
 		    my_gradient.addColorStop("1.0", "purple");
-			ctx.fillText("Click Enter to start game!", canvas.width/2, canvas.height/2); 
+			ctx.fillText("PRESS ENTER TO START!", canvas.width/2, canvas.height/2); 
 			flashingTextTimer=0;
 			flashingTextTimer2=30;
 		}
 		//crta player ikona pod tekstot
-		ctx.drawImage(characterSpriteDefault,250,350,20,20);
+		//ctx.drawImage(characterSpriteDefault,250,350,20,20);
 		DeclareGameParameters();
 	}
 	powerup = new PowerUp();
