@@ -347,9 +347,9 @@
 	}
 	class PowerUp {
 		constructor(){
-			this.x = -275;
-			this.y=350;
-			this.r=6;
+			this.x = -250;
+			this.y = 350;
+			this.r= 5;
 			this.type = null; 	// #1 invulnerable player, #2 player turns around(now facing straight left), can shoot straight, and kills 	
 			this.spawned = false;	//enemies with 1 shot a.k.a beast mode
 									// powers should last 3-4 seconds 
@@ -381,7 +381,7 @@
 			if(this.y + this.r <= 470)			// fall on the ground	
 				this.y+=5;
 			if (game.leftArr && !randomTile.hitPlayer)	// move right
-      			this.x+=5;
+      			this.x+= player.velocity;
       		if(this.x >= 800) {				// when the current power gets out of bounds, another one can be spawned 
       			this.spawned = false; 
       			this.x = -100;
@@ -405,11 +405,10 @@
 			} else 
 				this.draw();
 		}
-		check_collision(){
-			if((this.x+this.r >= player.x && this.x+this.r <= player.x + player.w) ||
-				(player.x+player.w >= this.x && player.x+player.w <= this.x+this.r) &&
-				 player.y+player.h >= 465)
-				 {
+		check_collision()
+		{
+			if(Colliding(this, player))
+			{
 					player.powerEnderCountdown=300;
 					player.power = this.type;
 					current_player_mode = this.type; 	// global variable (needed to change background)
@@ -437,21 +436,17 @@
 			ctx.drawImage(this.tile, this.x, this.y, this.w, this.h);
 			if (game.leftArr && !this.hitPlayer) this.x += player.velocity;
 
-			if (this.x > 600)
-			{
-				this.appear = false; //appearn() will stop being called
-				this.w=20 * Math.floor((Math.random()*5)+1) //must be bigger than 20 and divisible by 20
-				this.x = -100; // reset at original position on the left
-				this.h = 10+10*Math.floor((Math.random()*5)+1); //new object height //must at least 20 and divisible by 10
-				this.y = 445 - (30 * (this.h / 30 - 1)); //adjust y to new height
-			}
+			if (this.x > 600) this.disappear();
 
-			if (Math.abs(this.x - player.x) == this.w && player.x > this.x && player.power != 'invulnerable') //when player and object collide on x axis
+			if (Colliding(this, player)) this.hitPlayer = true;
+			else this.hitPlayer = false;
+
+			/*if (Math.abs(this.x - player.x) == this.w && player.x > this.x && player.power != 'invulnerable') //when player and object collide on x axis
 			{
 				if (player.y + player.h / 2 > (this.y - this.h / 2)) this.hitPlayer = true; // if player isnt in the air over the obstacle
 				else this.hitPlayer = false;
 				return;
-			}
+			}*/
 		}
 		playerOnTop() 
 		{
@@ -466,6 +461,14 @@
 					player.verticalCollision = false;
 				}
 			}
+		}
+		disappear()
+		{
+			this.appear = false; //appearn() will stop being called
+			this.w=20 * Math.floor((Math.random()*5)+1) //must be bigger than 20 and divisible by 20
+			this.x = -100; // reset at original position on the left
+			this.h = 10+10*Math.floor((Math.random()*5)+1); //new object height //must at least 20 and divisible by 10
+			this.y = 445 - (30 * (this.h / 30 - 1)); //adjust y to new height
 		}
 	}
 	class Cloud {
@@ -596,7 +599,8 @@
 				ImpactX(randomTile, 15, true);
 				ImpactX(enemy, 15, true);
 				ImpactX(tiles, 15, true);
-				ImpactX(cloud, 15, true)
+				ImpactX(cloud, 15, true);
+				ImpactX(powerup, 15, true);
 				this.decrement_lives_permission = HitPlayer1(this.decrement_lives_permission);
 				
 				return;
@@ -851,26 +855,25 @@
 		enemyProjectile.draw();
 	}
 
-	function utvrdiSudir(entity1, entity2)
+	function Colliding(e1, e2)
 	{
-		let larger_width_entity = entity1.w > entity2.w ? entity1 : entity2;
-		let smaller_width_entity = entity1.w > entity2.w ? entity2 : entity1;
+		let rEntity = e1.x > e2.x ? e1 : e2;
+		let lEntity = e1.x > e2.x ? e2 : e1;
 
-		let larger_height_entity = entity1.h > entity2.h ? entity1 : entity2;
-		let smaller_height_entity = entity1.h > entity2.h ? entity2 : entity1;
+		// if the entity on the left is a player, void check
+		if (lEntity instanceof Player) return false;
 
-		if (entity1 instanceof Player || entity2 instanceof Player)
-		{
-			if (larger_width_entity.x + larger_width_entity.w >= smaller_width_entity.x)
-				if (smaller_height_entity.y + smaller_height_entity.h > larger_height_entity.y) // this.y + this.h > randomTile.y
-					return true;
-		}
-		else
-		{
-			if (larger_width_entity.x + larger_width_entity.w <= smaller_width_entity.x)
-				if (larger_height_entity.y + larger_height_entity.h >= smaller_height_entity.y) 
-					return true;
-		}
+		// 0 index - left barrier of entity
+		// 1 index - right barrier of entity
+		// 2 index - top barrier of entity
+		// 3 index - bottom barrier of entity
+		let lEntityBarrier = [(lEntity instanceof PowerUp ? lEntity.x - lEntity.r : lEntity.x), (lEntity.x + (lEntity instanceof PowerUp ? lEntity.r : lEntity.w)), (lEntity instanceof PowerUp ? lEntity.y - lEntity.r : lEntity.y), (lEntity instanceof PowerUp ? lEntity.y + lEntity.r : lEntity.y + lEntity.h)];
+		let rEntityBarrier = [(rEntity instanceof PowerUp ? rEntity.x - rEntity.r : rEntity.x), (rEntity.x + (rEntity instanceof PowerUp ? rEntity.r : rEntity.w)), (rEntity instanceof PowerUp ? rEntity.y - rEntity.r : rEntity.y), (rEntity instanceof PowerUp ? rEntity.y + rEntity.r : rEntity.y + rEntity.h)];
+		
+		// Collider Check(s)
+		if (lEntityBarrier[1] >= rEntityBarrier[0])
+			if (lEntityBarrier[2] < rEntityBarrier[3])
+				return true; 
 
 		return false;
 	}
