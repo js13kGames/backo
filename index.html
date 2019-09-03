@@ -79,12 +79,14 @@
 			this.status = 2; // 0 intro, 1 menu (selection), 2 gameplay, 3 menu during gameplay
 			this.leftArr = false;
 			this.upArrow = false;
+			this.rightArr = false;
 			this.slope = false;
 			this.canvas_width = canvas_width;
 			this.canvas_height = canvas_height;
 			this.primitive_tile_width = 25;
 			this.primitive_tile_height = 25;
 			this.className = 'Game';
+			this.boss_fight_permission = false;
 		}
 		drawCanvas() 
 		{
@@ -106,7 +108,7 @@
 		}
 		drawTiles() 
 		{
-			if (this.leftArr && !randomTile.hitPlayer) //now stops moving when playa is hit by obstacle
+			if (this.leftArr && !randomTile.hitPlayer && !this.boss_fight_permission) //now stops moving when playa is hit by obstacle
 			{ 
 				var lastTile = tiles[tiles.length - 1];
 				tiles.push(new Tile(lastTile.x - this.primitive_tile_width, 475, 'basic'));
@@ -125,31 +127,17 @@
 			else
 				for (var i = 0; i < tiles.length; i++)
 					ctx.drawImage(baseTile, 0, 0, 16, 16, tiles[i].x, tiles[i].y, this.primitive_tile_width, this.primitive_tile_height);
-		}  
-	}
-	class Interactable 
-	{
-		constructor(status) 
-		{
-			this.x = parseInt(Math.random() * (400 - 100) + 100);
-			this.y = parseInt(Math.random() * (400 - 100) + 100);
-			this.status = status; // beneficial, neutral, hostile
-			this.className = 'Interactable';
+		} 
+		checkScore(){
+			if(player.currentScore >= 50) {
+				this.boss_fight_permission = true;
+			}
+
+			if(this.boss_fight_permission)
+				this.boss_fight(); 				// initialize boss fight
 		}
-		draw() 
-		{
-			if (this.status == 'hostile') 
-				ctx.drawImage(hostileInteractable, 0, 0, 16, 16, this.x, this.y, 16, 16);
-			if (this.status == 'netural') 
-				ctx.drawImage(neutralInteractable, 0, 0, 16, 16, this.x, this.y, 16, 16);
-			if (this.status == 'beneficial') 
-				ctx.drawImage(beneficialInteractable, 0, 0, 16, 16, this.x, this.y, 16, 16);
-		}
-		ascertainCollision() 
-		{
-		}
-		ascertainMovement()
-		{
+
+		boss_fight(){
 			
 		}
 	}
@@ -210,8 +198,15 @@
 				} 
 			}
 		}
+		move(){
+			if(game.boss_fight_permission && game.leftArr && boss.on_place())
+				this.x -= 2;
+			if(game.boss_fight_permission && game.rightArr && boss.on_place())
+				this.x += 2;
+		}
 		ascertainGravity() 
 		{
+			
 			if (!this.verticalCollision && !this.playerWasOnTop) //Fall if player not on ground or on top of object
 			{
 				this.y += 5
@@ -225,7 +220,7 @@
 				this.hangTime=5; 
 				
 			} 
-			else if (this.oldY === this.jumpHeight) //stop ascending when reaching max jump height
+			else if (this.oldY == this.jumpHeight) //stop ascending when reaching max jump height
 			{
 				if (this.hangTime == 0)
 				{
@@ -428,6 +423,7 @@
 		appearnow() 
 		{
 			ctx.drawImage(this.tile, this.x, this.y, this.w, this.h);
+
 			if (game.leftArr && !this.hitPlayer) this.x += player.velocity;
 
 			if (this.x > 600) this.disappear();
@@ -521,14 +517,10 @@
 		}
 		draw() 
 		{
-			// if(player.power == 'beast'){
-			// 	this.maxLives = 1;
-			// }
 			if(enemy.currentLives != 0){
 				ctx.fillStyle = 'black';
 				ctx.fillRect(this.x, this.y, this.w, this.h)
 			}
-			
 		}
 		fall() 
 		{
@@ -543,7 +535,7 @@
 		}
 		move() 
 		{
-			if (game.leftArr && !randomTile.hitPlayer)
+			if (game.leftArr && !randomTile.hitPlayer && !game.boss_fight_permission)
 				this.x += player.velocity;
 		}
 		ascertainCollision() 
@@ -689,7 +681,7 @@
 		}
 		decidetoshoot()
 		{
-			if(!this.ejected)
+			if(!this.ejected && !game.boss_fight_permission)
 			{
 				this.toShootOrNotToShoot -= 1;
 			    if (this.toShootOrNotToShoot < 1)
@@ -737,16 +729,38 @@
 			   
 		}
 	}
+	class Boss{
+		constructor() 
+		{
+			this.w = 60;
+			this.h = 100;
+			this.x = -550;
+			this.y = game.canvas_height - game.primitive_tile_height - this.h;
+		}
+		draw() 
+		{
+			ctx.fillStyle = 'black';
+			ctx.fillRect(this.x, this.y, this.w, this.h)
+		}
+		move(){
+			if(this.x != 100)
+				this.x += 10;
+		}
+		on_place() {
+			return this.x == 100 			// returns true if the boss is on his place
+		}
+	}
 	game = new Game(500, 500);
+	boss = new Boss();
 	function DeclareGameParameters()
 	{
+		
 	    randomTile = new RandomTile(100, baseTile);
 	    player = new Player();
 	    enemy = new Enemy();
      	projectile = new Projectile(10, 10, 20, 20);
 	    enemyProjectile = new EnemyProjectile();
 	}
-	
     function ScoreText()
 	{
 		ctx.font = "35px Impact";
@@ -766,26 +780,22 @@
 			}
 			else
 			{
-			if (event.keyCode == 38) // up
-			{
-				game.upArrow = true;
-			}
-			if (event.keyCode == 32) // space
-			{
-				projectile.ejected = true;
-			}
-			if (event.keyCode == 37) // left
-			{
-				game.leftArr = true;
-	 		}
+				if (event.keyCode == 38) // up
+					game.upArrow = true;
+				if (event.keyCode == 32) // space
+					projectile.ejected = true;
+				if (event.keyCode == 37) // left
+					game.leftArr = true;
+				if (event.keyCode == 39) // right
+					game.rightArr = true;
 			}
 		}, false);
 		window.addEventListener('keyup', function(event) 
 		{
 			if (event.keyCode == 37) // left
-			{
 				game.leftArr = false
-			}
+			if (event.keyCode == 39) // right
+					game.rightArr = false;
 
 		}, false);
 	}
@@ -922,9 +932,14 @@
 	{
 		player.ascertainGravity();
 		player.jump();
+		player.move();
 		player.draw();
 		player.processLives();
 		player.powerender()
+	}
+	function BossOrder(){
+		boss.draw();
+		boss.move();
 	}
 	function WaitForStart()
 	{
@@ -979,17 +994,24 @@
 			WaitForStart();
 		else
 		{
-			powerup.create_power();
-			powerup.check_collision();
+			game.checkScore();
 			game.drawTiles();
-			cloud.draw();
-			randomTile.appearnow();
-			randomTile.playerOnTop();
-			EnemyProjectileOrder()
-			EnemyOrder();
+			
+			if(!game.boss_fight_permission) {
+				powerup.create_power();
+				powerup.check_collision();
+				cloud.draw();
+				randomTile.appearnow();
+				randomTile.playerOnTop();
+				EnemyProjectileOrder()
+				EnemyOrder();
+			}
+			else BossOrder();
 			PlayerOrder();
 			ProjectileOrder();
 			ScoreText();
+
+			console.log(game.boss_fight_permission)
 		}
 	}
 	setInterval(recurring, 16.6666666667); // delenjeto sozdava stutters
