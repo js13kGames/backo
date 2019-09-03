@@ -97,10 +97,17 @@
 				ctx.fillStyle = my_gradient;
 				ctx.fillRect(0, 0, this.canvas_width, this.canvas_height);
 			}
-			else {
+			if(current_player_mode == 'null'){
 				var my_gradient = ctx.createLinearGradient(0, 0, 0, 320);
 				my_gradient.addColorStop(0, "darkblue");
 				my_gradient.addColorStop(1, "saddlebrown");
+				ctx.fillStyle = my_gradient;
+				ctx.fillRect(0, 0, this.canvas_width, this.canvas_height);
+			}
+			if(this.boss_fight_permission){
+				var my_gradient = ctx.createLinearGradient(0, 0, 0, 320);
+				my_gradient.addColorStop(0, "MediumOrchid");
+				my_gradient.addColorStop(1, "darkslategrey");
 				ctx.fillStyle = my_gradient;
 				ctx.fillRect(0, 0, this.canvas_width, this.canvas_height);
 			}
@@ -131,6 +138,7 @@
 		checkScore(){
 			if(player.currentScore >= 50) {
 				this.boss_fight_permission = true;
+				player.power = null;
 			}
 
 			if(this.boss_fight_permission)
