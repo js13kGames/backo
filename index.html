@@ -259,7 +259,6 @@
 					this.power = null;
 					current_player_mode = null;
 				}
-				
 			}
 		}
 	}
@@ -377,9 +376,9 @@
 				this.y+=5;
 			if (game.leftArr && !randomTile.hitPlayer)	// move right
       			this.x+= player.velocity;
-      		if(this.x >= 800) {				// when the current power gets out of bounds, another one can be spawned 
+      		if(this.x >= game.canvas_width + this.r) {				// when the current power gets out of bounds, another one can be spawned 
       			this.spawned = false; 
-      			this.x = -100;
+      			this.x = -250;
       		}
 		}
 		create_power(){
@@ -391,7 +390,7 @@
 						let rngType = Math.random();
 						if(rngType >= 0.7)
 							this.type = 'invulnerable'		//70 chance of getting the invulnerable powerup, 30 for beast mode
-						else
+						else 
 							this.type = 'beast';
 
 						this.spawned = true;
@@ -402,13 +401,13 @@
 		}
 		check_collision()
 		{
-			if(Colliding(this, player))
+			if(this.spawned && Colliding(this, player))
 			{
 					player.powerEnderCountdown=300;
 					player.power = this.type;
 					current_player_mode = this.type; 	// global variable (needed to change background)
 					this.spawned = false; 				// power dissapears, player gains the power
-					this.x = -100;						
+					this.x = -250;
 			}
 		}
 	}
@@ -614,7 +613,8 @@
 		}
 		respawn() 
 		{
-			this.x = player.x < randomTile.x ? this.w * 2 : randomTile.x - randomTile.w - this.w;
+			this.x = -250;
+			this.x = Colliding(this, randomTile) ? this.x - randomTile.w - this.w : this.x;
 			this.y = game.canvas_height - this.h - game.primitive_tile_height;
 			this.currentLives = this.maxLives;
 		}
@@ -853,13 +853,21 @@
 		let rEntity = e1.x > e2.x ? e1 : e2;
 		let lEntity = e1.x > e2.x ? e2 : e1;
 
+		if (rEntity instanceof Player)
+			if (rEntity.power === 'invulnerable')
+				return false;
+
+		if (lEntity instanceof Player)
+			if (lEntity.power === 'invulnerable')
+				return false; 
+
 		// if the entity on the left is a player, void check
 		if (lEntity instanceof Player || lEntity instanceof Projectile) return false;
 
-		// 0 index - left barrier of entity
-		// 1 index - right barrier of entity
-		// 2 index - top barrier of entity
-		// 3 index - bottom barrier of entity
+		// 0 index - top left barrier of entity
+		// 1 index - top right barrier of entity
+		// 2 index - top left barrier of entity
+		// 3 index - bottom left barrier of entity
 		let lEntityBarrier = [(lEntity instanceof PowerUp ? lEntity.x - lEntity.r : lEntity.x), (lEntity.x + (lEntity instanceof PowerUp ? lEntity.r : lEntity.w)), (lEntity instanceof PowerUp ? lEntity.y - lEntity.r : lEntity.y), (lEntity instanceof PowerUp ? lEntity.y + lEntity.r : lEntity.y + lEntity.h)];
 		let rEntityBarrier = [(rEntity instanceof PowerUp ? rEntity.x - rEntity.r : rEntity.x), (rEntity.x + (rEntity instanceof PowerUp ? rEntity.r : rEntity.w)), (rEntity instanceof PowerUp ? rEntity.y - rEntity.r : rEntity.y), (rEntity instanceof PowerUp ? rEntity.y + rEntity.r : rEntity.y + rEntity.h)];
 		
