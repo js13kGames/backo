@@ -322,22 +322,17 @@
 			if(this.y >= 460){
 				this.ejected = false;				// dissapear when it touches the ground
 			}
-
-			if (Math.sign(Math.abs(this.x - randomTile.x)) && Math.abs(this.x - randomTile.x) < (this.w > randomTile.w ? this.w : randomTile.w) && this.y >= randomTile.y) // if hits a random tile
+			// Math.sign(Math.abs(this.x - randomTile.x)) && Math.abs(this.x - randomTile.x) < (this.w > randomTile.w ? this.w : randomTile.w) && this.y >= randomTile.y
+			if (Colliding(this, randomTile)) // if hits a random tile
 			{
 				this.y_dir = -1;
 				this.x_dir = -1; 
-				return;
-			}
-
-			if (!Math.sign(Math.abs(this.x - randomTile.x)) && Math.abs(this.x - randomTile.x) < (this.w > randomTile.w ? this.w : randomTile.w) && this.y >= randomTile.y) // if hits a random tile
-			{
 				this.ejected = false;
 				return;
 			}
 
-			
-			if (Math.abs(this.x - enemy.x) < (this.w > enemy.w ? this.w : enemy.w) && this.y > enemy.y) // if hits an enemy
+			// Math.abs(this.x - enemy.x) < (this.w > enemy.w ? this.w : enemy.w) && this.y > enemy.y
+			if (Colliding(this, enemy)) // if hits an enemy
 			{ 
 				enemy.negativeCollision = true;
 				this.y_dir=-1;		
@@ -573,8 +568,8 @@
 				ImpactX(enemy, 15);
 				return;
 			}
-			
-			if (Math.abs(this.x - randomTile.x) <= (this.w > randomTile.w ? this.w : randomTile.w)) // random tile collision
+			// Math.abs(this.x - randomTile.x) <= (this.w > randomTile.w ? this.w : randomTile.w)
+			if (Colliding(this, randomTile)) // random tile collision
 			{
 				clearInterval(ImpactXInterval);
 				intervalOngoing = false;
@@ -593,8 +588,8 @@
 				this.respawn();
 				return;
 			}
-			
-			if (Math.abs(this.x - player.x) < (this.w > player.w ? this.w : player.w) && this.y < player.y + player.h && player.power != 'invulnerable') // player X collision
+			// Math.abs(this.x - player.x) < (this.w > player.w ? this.w : player.w) && this.y < player.y + player.h 
+			if (Colliding(this, player) && player.power != 'invulnerable') // player X collision
 			{
 				ImpactX(randomTile, 15, true);
 				ImpactX(enemy, 15, true);
@@ -619,7 +614,7 @@
 		}
 		respawn() 
 		{
-			this.x = randomTile.x - this.w - randomTile.w;
+			this.x = player.x < randomTile.x ? this.w * 2 : randomTile.x - randomTile.w - this.w;
 			this.y = game.canvas_height - this.h - game.primitive_tile_height;
 			this.currentLives = this.maxLives;
 		}
@@ -719,7 +714,8 @@
 				this.ejected=false;
 				this.toShootOrNotToShoot=100;
 			}
-			if (this.x + this.w > randomTile.x && this.y + this.h > randomTile.y) 
+			//this.x + this.w > randomTile.x && this.y + this.h > randomTile.y
+			if (Colliding(this, randomTile)) 
 			{
 				this.ejected = false;
 				this.toShootOrNotToShoot = 100;
@@ -729,13 +725,10 @@
 		{
 			if (this.ejected)
 	     	{
-		 		if ((Math.abs(this.x - player.x) < (this.w > player.w ? this.w : player.w) && this.y < player.y + player.h) && player.power != 'invulnerable')
+				 // (Math.abs(this.x - player.x) < (this.w > player.w ? this.w : player.w) && this.y < player.y + player.h)
+		 		if (Colliding(this, player) && player.power != 'invulnerable')
 		    	{
-			    	if (Math.abs(this.x - player.x) < (this.w > player.w ? this.w : player.w) && this.y < player.y + player.h && player.power != 'invulnerable') 
-		     	    {
-						this.decrement_lives_permission=HitPlayer1(this.decrement_lives_permission);
-				    }
-
+					this.decrement_lives_permission=HitPlayer1(this.decrement_lives_permission);
 					this.ejected=false;
 					this.toShootOrNotToShoot=100;
 			    }
@@ -861,7 +854,7 @@
 		let lEntity = e1.x > e2.x ? e2 : e1;
 
 		// if the entity on the left is a player, void check
-		if (lEntity instanceof Player) return false;
+		if (lEntity instanceof Player || lEntity instanceof Projectile) return false;
 
 		// 0 index - left barrier of entity
 		// 1 index - right barrier of entity
