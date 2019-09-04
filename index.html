@@ -90,20 +90,6 @@
 		}
 		drawCanvas() 
 		{
-			if(current_player_mode != 'beast') {
-				var my_gradient = ctx.createLinearGradient(0, 0, 0, 320);
-				my_gradient.addColorStop(0, "darkblue");
-				my_gradient.addColorStop(1, "lightblue");
-				ctx.fillStyle = my_gradient;
-				ctx.fillRect(0, 0, this.canvas_width, this.canvas_height);
-			}
-			if(current_player_mode == 'null'){
-				var my_gradient = ctx.createLinearGradient(0, 0, 0, 320);
-				my_gradient.addColorStop(0, "darkblue");
-				my_gradient.addColorStop(1, "saddlebrown");
-				ctx.fillStyle = my_gradient;
-				ctx.fillRect(0, 0, this.canvas_width, this.canvas_height);
-			}
 			if(this.boss_fight_permission){
 				var my_gradient = ctx.createLinearGradient(0, 0, 0, 320);
 				my_gradient.addColorStop(0, "MediumOrchid");
@@ -111,6 +97,23 @@
 				ctx.fillStyle = my_gradient;
 				ctx.fillRect(0, 0, this.canvas_width, this.canvas_height);
 			}
+			else
+				if(current_player_mode == 'beast'){
+					var my_gradient = ctx.createLinearGradient(0, 0, 0, 320);
+					my_gradient.addColorStop(0, "darkblue");
+					my_gradient.addColorStop(1, "saddlebrown");
+					ctx.fillStyle = my_gradient;
+					ctx.fillRect(0, 0, this.canvas_width, this.canvas_height);
+					return;
+				} else {
+					var my_gradient = ctx.createLinearGradient(0, 0, 0, 320);
+					my_gradient.addColorStop(0, "darkblue");
+					my_gradient.addColorStop(1, "lightblue");
+					ctx.fillStyle = my_gradient;
+					ctx.fillRect(0, 0, this.canvas_width, this.canvas_height);
+					return;
+				}
+			
 				
 		}
 		drawTiles() 
@@ -136,17 +139,11 @@
 					ctx.drawImage(baseTile, 0, 0, 16, 16, tiles[i].x, tiles[i].y, this.primitive_tile_width, this.primitive_tile_height);
 		} 
 		checkScore(){
-			if(player.currentScore >= 50) {
+			if(player.currentScore == 50) {
 				this.boss_fight_permission = true;
+				enemy.type = 'boss'	
 				player.power = null;
 			}
-
-			if(this.boss_fight_permission)
-				this.boss_fight(); 				// initialize boss fight
-		}
-
-		boss_fight(){
-			
 		}
 	}
 	class Player 
@@ -174,7 +171,6 @@
 			this.hangTime = 5; //set to 5 also in lines 420 196
 			this.stopAscend = false;
 			this.currentScore = 0;
-			this.scorePerKill = 50;
 			this.power = null;
 			this.powerEnderCountdown=300;			
 		}
@@ -207,9 +203,9 @@
 			}
 		}
 		move(){
-			if(game.boss_fight_permission && game.leftArr && boss.on_place())
+			if(game.boss_fight_permission && game.leftArr && this.x >= 0)
 				this.x -= 2;
-			if(game.boss_fight_permission && game.rightArr && boss.on_place())
+			if(game.boss_fight_permission && game.rightArr && this.x+this.w <= 500)
 				this.x += 2;
 		}
 		ascertainGravity() 
@@ -244,13 +240,21 @@
 		}
 		processLives(){
 			this.drawLives();
+
+			if(this.lives == 0) {
+					enemy.x -= 30;
+					this.lives = 3;
+					gameStarted = false;
+					enemy.respawn();
+					WaitForStart();
+			}
 		}
 		drawLives(){
 			for(let i = 1; i <= this.lives; i++)
 				ctx.drawImage(heart,game.canvas_width - i*25,10,16,16);
 		}
-		addtoscore() {
-			this.currentScore += this.scorePerKill;
+		addtoscore(points) {
+			this.currentScore += points;
 		}
 		powerender()
 		{
@@ -317,12 +321,17 @@
             if(this.x >= game.canvas_width)
 				this.x_dir *= -1;						// bounce off of right wall
 
-			if(this.x <= 400){
+			if(this.x <= 400 && !game.boss_fight_permission){
 				this.y_dir = 0;						// apply gravity when it reaches a certain point
 				this.y += this.gravityForce;
 			}
 			if(this.y >= 460){
 				this.ejected = false;				// dissapear when it touches the ground
+			}
+
+			if(game.boss_fight_permission && this.x <= player.x - 100) {
+				this.y_dir = 0;
+				this.y += this.gravityForce
 			}
 			// Math.sign(Math.abs(this.x - randomTile.x)) && Math.abs(this.x - randomTile.x) < (this.w > randomTile.w ? this.w : randomTile.w) && this.y >= randomTile.y
 			if (Colliding(this, randomTile)) // if hits a random tile
@@ -522,32 +531,47 @@
 			this.randomMovement=0;
 			this.moving = false;
 			this.randomMovementCountdown = 10;
+			this.type = 'normal';
+			this.consecutive_kills = 0;
 		}
-		draw() 
-		{
+		draw(){
 			if(enemy.currentLives != 0){
 				ctx.fillStyle = 'black';
 				ctx.fillRect(this.x, this.y, this.w, this.h)
 			}
 		}
-		fall() 
-		{
+		fall(){
 			if (!this.verticalCollision && !player.playerOnTop) 
-			{
 				this.y += 5;			//gravity pull
-			}
 			if (this.y >= 445 + (30 - this.h)) 
 				this.verticalCollision = true;
 			else 
 				this.verticalCollision = false;
 		}
-		move() 
-		{
+		boss(){
+			// boss() is being called only when the enemy is a boss
+
+			this.maxLives = 2; 						// boss has 5 lives
+			if(Colliding(this,player)) 	player.lives = 0	// player is dead if the boss touches him
+
+			if(this.currentLives == 0)	{	//boss dead 
+				game.boss_fight_permission = false;
+				player.addtoscore(100);
+				player.lives++;
+				this.type = 'normal'
+				this.respawn();
+				return;
+			}
+		}
+		move(){
+			if(this.type == 'boss') {
+				if(this.x <= 100)
+					this.x += 5;
+			}
 			if (game.leftArr && !randomTile.hitPlayer && !game.boss_fight_permission)
 				this.x += player.velocity;
 		}
-		ascertainCollision() 
-		{
+		ascertainCollision(){
 			if (this.x > 500)
 			{
 				this.respawn();
@@ -559,11 +583,9 @@
 				projectile.ejected = false;
 				this.negativeCollision = false;
 				this.currentLives--;
-				if (this.currentLives < 1)
-				{
-					player.addtoscore();
-					return this.respawn();
-				}	
+				if (this.currentLives < 1 && this.type != 'boss')		//enemy dead
+					this.dead();
+
 				ImpactX(enemy, 15);
 				return;
 			}
@@ -575,16 +597,15 @@
 				return;
 			} 
 
-			if (Math.abs(this.x - player.x) < (this.w > player.w ? this.w : player.w) && this.y == player.y + player.h && player.power != 'invulnerable') // player Y collision causes a bounce
+			if (Math.abs(this.x - player.x) < (this.w > player.w ? this.w : player.w) && this.y == player.y + player.h && player.power != 'invulnerable' && this.type != 'boss') // player Y collision causes a bounce
 			{
 				player.jumpHeight = 180;
 				player.verticalCollision = true;
 				game.upArrow = true;
 				player.stopAscend=false;
 				player.hangTime=5; 
-				enemy.currentLives = 0;
-				player.addtoscore();
-				this.respawn();
+				this.dead();
+
 				return;
 			}
 			// Math.abs(this.x - player.x) < (this.w > player.w ? this.w : player.w) && this.y < player.y + player.h 
@@ -600,27 +621,15 @@
 				return;
 			}
 
-			if(player.lives == 0) {
-					enemy.x -= 30;
-					player.lives = 3;
-					gameStarted = false;
-					this.respawn();
-					WaitForStart();
-			}
-
 			this.decrement_lives_permission= HitPlayer2(this.decrement_lives_permission);
-
 		}
-		respawn() 
-		{
+		respawn(){
 			this.x = -250;
 			this.x = Colliding(this, randomTile) ? this.x - randomTile.w - this.w : this.x;
 			this.y = game.canvas_height - this.h - game.primitive_tile_height;
 			this.currentLives = this.maxLives;
 		}
-
-		healthbar()
-		{
+		healthbar(){
 			if(this.currentLives != 0){
 				ctx.fillStyle = 'gray';
 				ctx.fillRect(this.x, this.y-this.w/3, this.w, 10);
@@ -629,35 +638,48 @@
 				else 
 				ctx.fillStyle = 'green';
 				ctx.fillRect(this.x, this.y-this.w/3, this.w * ((this.currentLives*100/this.maxLives)/100), 10);
-			}
-			
+			}	
 		}
-		randomlymove()
-		{
-			this.randomMovement = Math.random()*50+1;
-			if (this.randomMovement>48.9)
-			{
-				this.moving=true;
-				this.randomMovementCountdown=10;
-			}
+		randomlymove(){
+			if(!game.boss_fight_permission) {
 
-			if (Math.abs(this.x - randomTile.x) <= (this.w > randomTile.w ? this.w : randomTile.w)) 
-			{
-				this.randomXdir *=-1
-				this.x += 7*this.randomXdir;
+				this.randomMovement = Math.random()*50+1;
+				if (this.randomMovement>48.9)
+				{
+					this.moving=true;
+					this.randomMovementCountdown=10;
+				}
+
+				if (Math.abs(this.x - randomTile.x) <= (this.w > randomTile.w ? this.w : randomTile.w)) 
+				{
+					this.randomXdir *=-1
+					this.x += 7*this.randomXdir;
+				}
+				
+				else if(this.moving && this.randomMovementCountdown > 0)
+				{
+					this.x += 3*this.randomXdir;
+					this.randomMovementCountdown--;
+				}
+				else 
+				{
+					this.moving=false;
+					this.randomMovementCountdown=50;
+					this.randomXdir *= -1;
+				}
 			}
-			
-			else if(this.moving && this.randomMovementCountdown > 0)
-			{
-				this.x += 3*this.randomXdir;
-				this.randomMovementCountdown--;
-			}
-			else 
-			{
-				this.moving=false;
-				this.randomMovementCountdown=50;
-				this.randomXdir *= -1;
-			}
+		}
+		dead(){
+
+				enemy.currentLives = 0;
+				this.consecutive_kills++;
+				if(this.consecutive_kills == 5){
+					player.lives++;
+					this.consecutive_kills = 0;
+				}
+				player.addtoscore(50);
+
+				this.respawn();
 		}
 	}
 	class EnemyProjectile
@@ -684,12 +706,12 @@
 			if(!this.ejected)
 			{
 				this.x=enemy.x;
-			this.y=enemy.y+10;
+				this.y=enemy.y+10;
 			}
 		}
 		decidetoshoot()
 		{
-			if(!this.ejected && !game.boss_fight_permission)
+			if(!this.ejected)
 			{
 				this.toShootOrNotToShoot -= 1;
 			    if (this.toShootOrNotToShoot < 1)
@@ -700,7 +722,9 @@
 		{
 			if (this.ejected)
 			{
-				this.x +=3;
+				if(enemy.type=='boss') this.x+=7
+				else this.x +=3;
+
 				if (game.leftArr && !randomTile.hitPlayer)
 				{
 					this.x+=5;
@@ -737,29 +761,7 @@
 			   
 		}
 	}
-	class Boss{
-		constructor() 
-		{
-			this.w = 60;
-			this.h = 100;
-			this.x = -550;
-			this.y = game.canvas_height - game.primitive_tile_height - this.h;
-		}
-		draw() 
-		{
-			ctx.fillStyle = 'black';
-			ctx.fillRect(this.x, this.y, this.w, this.h)
-		}
-		move(){
-			if(this.x != 100)
-				this.x += 10;
-		}
-		on_place() {
-			return this.x == 100 			// returns true if the boss is on his place
-		}
-	}
 	game = new Game(500, 500);
-	boss = new Boss();
 	function DeclareGameParameters()
 	{
 		
@@ -776,7 +778,6 @@
 		ctx.textAlign = "left";
 		ctx.fillText("Score: " + player.currentScore, 7, 35); 
 	}
-
 	function eventHandler() 
 	{
 		window.addEventListener('keydown', function(event) 
@@ -807,7 +808,6 @@
 
 		}, false);
 	}
-
 	function ImpactX(entity, repetitions, reverse = false) 
 	{
 		if (intervalOngoing) return;
@@ -833,7 +833,6 @@
 			}
 		}, 16.6666666667);
 	}
-	
 	function animatePlayer( defaultImage, walkingImage, context) {
 	  if(player.timerForFirstImage<5) {  //crta prvata slika 5 ciklusi
 	    context.drawImage(defaultImage,player.x,player.y,player.w,player.h);
@@ -865,7 +864,6 @@
 		enemyProjectile.reset();
 		enemyProjectile.draw();
 	}
-
 	function Colliding(e1, e2)
 	{
 		let rEntity = e1.x > e2.x ? e1 : e2;
@@ -886,8 +884,15 @@
 		// 1 index - top right barrier of entity
 		// 2 index - top left barrier of entity
 		// 3 index - bottom left barrier of entity
-		let lEntityBarrier = [(lEntity instanceof PowerUp ? lEntity.x - lEntity.r : lEntity.x), (lEntity.x + (lEntity instanceof PowerUp ? lEntity.r : lEntity.w)), (lEntity instanceof PowerUp ? lEntity.y - lEntity.r : lEntity.y), (lEntity instanceof PowerUp ? lEntity.y + lEntity.r : lEntity.y + lEntity.h)];
-		let rEntityBarrier = [(rEntity instanceof PowerUp ? rEntity.x - rEntity.r : rEntity.x), (rEntity.x + (rEntity instanceof PowerUp ? rEntity.r : rEntity.w)), (rEntity instanceof PowerUp ? rEntity.y - rEntity.r : rEntity.y), (rEntity instanceof PowerUp ? rEntity.y + rEntity.r : rEntity.y + rEntity.h)];
+		let lEntityBarrier = [(lEntity instanceof PowerUp ? lEntity.x - lEntity.r : lEntity.x), 
+		(lEntity.x + (lEntity instanceof PowerUp ? lEntity.r : lEntity.w)), 
+		(lEntity instanceof PowerUp ? lEntity.y - lEntity.r : lEntity.y), 
+		(lEntity instanceof PowerUp ? lEntity.y + lEntity.r : lEntity.y + lEntity.h)];
+
+		let rEntityBarrier = [(rEntity instanceof PowerUp ? rEntity.x - rEntity.r : rEntity.x), 
+		(rEntity.x + (rEntity instanceof PowerUp ? rEntity.r : rEntity.w)), 
+		(rEntity instanceof PowerUp ? rEntity.y - rEntity.r : rEntity.y), 
+		(rEntity instanceof PowerUp ? rEntity.y + rEntity.r : rEntity.y + rEntity.h)];
 		
 		// Collider Check(s)
 		if (lEntityBarrier[1] >= rEntityBarrier[0])
@@ -896,7 +901,6 @@
 
 		return false;
 	}
-
 	function rotateAndPaintImage ( context, image, angleInRad , positionX, positionY, axisX, axisY, width, height ) 
 	{
         context.translate( positionX, positionY );
@@ -925,6 +929,7 @@
 	{
 		enemy.draw();
 		enemy.healthbar();
+		if(game.boss_fight_permission) enemy.boss();
 		enemy.fall();
 		enemy.move();
 		enemy.ascertainCollision();
@@ -945,10 +950,7 @@
 		player.processLives();
 		player.powerender()
 	}
-	function BossOrder(){
-		boss.draw();
-		boss.move();
-	}
+	
 	function WaitForStart()
 	{
 		current_player_mode = null;
@@ -998,6 +1000,7 @@
 	function recurring() 
 	{
 		game.drawCanvas();
+
 		if(!gameStarted)
 			WaitForStart();
 		else
@@ -1011,15 +1014,13 @@
 				cloud.draw();
 				randomTile.appearnow();
 				randomTile.playerOnTop();
-				EnemyProjectileOrder()
-				EnemyOrder();
 			}
-			else BossOrder();
+
+			EnemyProjectileOrder();
+			EnemyOrder();
 			PlayerOrder();
 			ProjectileOrder();
 			ScoreText();
-
-			console.log(game.boss_fight_permission)
 		}
 	}
 	setInterval(recurring, 16.6666666667); // delenjeto sozdava stutters
