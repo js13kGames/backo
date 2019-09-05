@@ -13,6 +13,7 @@
 	</body>
 	<script>
 	// GameState variables
+	var gameFinished = false;
 	var current_player_mode = null;
 	var gameStarted = false;
 	var flashingTextTimer = 0; //se koristat vo WaitForStart() za broenje na ciklusi
@@ -776,13 +777,23 @@
 		ctx.font = "35px Impact";
 		ctx.fillStyle = gradient;
 		ctx.textAlign = "left";
-		ctx.fillText("Score: " + player.currentScore, 7, 35); 
+		ctx.fillText("Score: " + player.currentScore, 7, 35);
+		if(player.currentScore == 200)
+		{
+			gameStarted=false;
+			gameFinished=true;
+		} 
 	}
 	function eventHandler() 
 	{
 		window.addEventListener('keydown', function(event) 
 		{
-			if (!gameStarted)
+			if (!gameStarted && gameFinished)
+			{
+				if (event.keyCode == 13) // start game when pressing enter
+				gameFinished=false;
+			}
+			else if (!gameStarted)
 			{
 				if (event.keyCode == 13) // start game when pressing enter
 				    gameStarted = true;
@@ -950,10 +961,24 @@
 		player.processLives();
 		player.powerender()
 	}
+
+	function GameFinishedScreen()
+	{
+		var my_gradient = ctx.createLinearGradient(0, 0, canvas.width, 0);
+		my_gradient.addColorStop("0"," magenta");
+		my_gradient.addColorStop("0.5", "yellow");
+		my_gradient.addColorStop("1.0", "purple");
+		ctx.fillStyle = my_gradient;
+		ctx.textAlign = "center";
+        ctx.fillText("Game finished!", canvas.width/2, canvas.height/2-100); 
+		ctx.fillText("Press Enter to restart!", canvas.width/2, canvas.height/2); 
+	}
 	
 	function WaitForStart()
 	{
-		game.boss_fight_permission = false;
+		if(!gameFinished)
+		{
+			game.boss_fight_permission = false;
 		current_player_mode = null;
 		ctx.font = "35px Impact";
 		//ime na gejm text
@@ -996,6 +1021,9 @@
 		//crta player ikona pod tekstot
 		//ctx.drawImage(characterSpriteDefault,250,350,20,20);
 		DeclareGameParameters();
+		}
+		else
+		GameFinishedScreen();	
 	}
 	powerup = new PowerUp();
 	function recurring() 
