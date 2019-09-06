@@ -141,6 +141,7 @@
 		} 
 		checkScore(){
 			if(player.currentScore == 50) {
+				randomTile.x = 600;
 				this.boss_fight_permission = true;
 				enemy.type = 'boss'	
 				player.power = null;
@@ -1042,7 +1043,6 @@
 				powerup.check_collision();
 				cloud.draw();
 				randomTile.appearnow();
-				randomTile.playerOnTop();
 			}
 
 			EnemyProjectileOrder();
@@ -1050,6 +1050,7 @@
 			PlayerOrder();
 			ProjectileOrder();
 			ScoreText();
+			randomTile.playerOnTop();
 		}
 	}
 	setInterval(recurring, 16.6666666667); // delenjeto sozdava stutters
