@@ -71,7 +71,6 @@
 		tiles.push(new Tile(i,475,'basic'));				//pushing the initial tiles to the array so they can be drawn immediately
 	var firstTile = tiles[0];
 	tiles.push(new Tile(firstTile.x - 25, 475, 'basic'));
-
 	class Game 
 	{
 		constructor(canvas_width, canvas_height) 
@@ -558,13 +557,14 @@
 		boss(){
 			// boss() is being called only when the enemy is a boss
 
-			this.maxLives = 2; 						// boss has 5 lives
+			this.maxLives = 2; 						
 			if(rectCollision(this,player)) 	player.lives = 0	// player is dead if the boss touches him
 
 			if(this.currentLives == 0)	{	//boss dead 
 				game.boss_fight_permission = false;
 				player.addtoscore(100);
 				player.lives++;
+				player.x = 450;
 				this.type = 'normal'
 				this.respawn();
 				return;
@@ -689,6 +689,21 @@
 				this.respawn();
 		}
 	}
+	class Aim {
+		constructor(){
+			this.x=player.x - 205;
+			this.y=470;
+			this.w=20;
+			this.h=5;
+		}
+		draw(){
+			ctx.fillStyle = 'red'
+			ctx.globalAlpha = 0.5;	
+		    ctx.fillRect(this.x,this.y,this.w,this.h);
+		    ctx.globalAlpha = 1.0;
+			this.x = player.x-(205+(450-player.y));
+		}
+	}
 	class EnemyProjectile
 	{
 		constructor()
@@ -778,6 +793,7 @@
 	    enemy = new Enemy();
      	projectile = new Projectile(10, 10, 20, 20);
 	    enemyProjectile = new EnemyProjectile();
+	    aim = new Aim();
 	}
     function ScoreText()
 	{
@@ -791,7 +807,7 @@
 			gameFinished=true;
 		} 
 	}
-	function eventHandler() 
+	function eventHandler() 	
 	{
 		window.addEventListener('keydown', function(event) 
 		{
@@ -882,7 +898,6 @@
 		enemyProjectile.reset();
 		enemyProjectile.draw();
 	}
-	
 	function rectCollision(o1, o2) 
 	{
 		if (o1 instanceof Player)
@@ -957,7 +972,6 @@
 		player.processLives();
 		player.powerender()
 	}
-
 	function GameFinishedScreen()
 	{
 		var my_gradient = ctx.createLinearGradient(0, 0, canvas.width, 0);
@@ -969,7 +983,6 @@
         ctx.fillText("Game finished!", canvas.width/2, canvas.height/2-100); 
 		ctx.fillText("Press Enter to restart!", canvas.width/2, canvas.height/2); 
 	}
-	
 	function WaitForStart()
 	{
 		if(!gameFinished)
@@ -1032,7 +1045,8 @@
 		{
 			game.checkScore();
 			game.drawTiles();
-			
+			aim.draw();
+
 			if(!game.boss_fight_permission) {
 				powerup.create_power();
 				powerup.check_collision();
