@@ -140,7 +140,7 @@
 					ctx.drawImage(baseTile, 0, 0, 16, 16, tiles[i].x, tiles[i].y, this.primitive_tile_width, this.primitive_tile_height);
 		} 
 		checkScore(){
-			if(player.currentScore == 50) {
+			if(player.currentScore == 100) {
 				randomTile.x = 600;
 				this.boss_fight_permission = true;
 				enemy.type = 'boss'	
@@ -336,7 +336,7 @@
 				this.y += this.gravityForce
 			}
 			// Math.sign(Math.abs(this.x - randomTile.x)) && Math.abs(this.x - randomTile.x) < (this.w > randomTile.w ? this.w : randomTile.w) && this.y >= randomTile.y
-			if (Colliding(this, randomTile)) // if hits a random tile
+			if (rectCollision(this, randomTile)) // if hits a random tile
 			{
 				this.y_dir = -1;
 				this.x_dir = -1; 
@@ -345,7 +345,7 @@
 			}
 
 			// Math.abs(this.x - enemy.x) < (this.w > enemy.w ? this.w : enemy.w) && this.y > enemy.y
-			if (Colliding(this, enemy)) // if hits an enemy
+			if (rectCollision(this, enemy)) // if hits an enemy
 			{ 
 				enemy.negativeCollision = true;
 				this.y_dir=-1;		
@@ -355,12 +355,13 @@
 	}
 	class PowerUp {
 		constructor(){
-			this.x = -250;
-			this.y = 350;
+			this.x = 250;
+			this.y = 445;
 			this.r= 5;
 			this.type = null; 	// #1 invulnerable player, #2 player turns around(now facing straight left), can shoot straight, and kills 	
 			this.spawned = false;	//enemies with 1 shot a.k.a beast mode
 									// powers should last 3-4 seconds 
+			this.className = 'PowerUp';
 			
 		}
 		draw(){
@@ -415,7 +416,7 @@
 		}
 		check_collision()
 		{
-			if(this.spawned && Colliding(this, player))
+			if(this.spawned && rectCollision(this, player))
 			{
 					player.powerEnderCountdown=300;
 					player.power = this.type;
@@ -447,7 +448,7 @@
 
 			if (this.x > 600) this.disappear();
 
-			if (Colliding(this, player)) this.hitPlayer = true;
+			if (rectCollision(this, player)) this.hitPlayer = true;
 			else this.hitPlayer = false;
 
 			/*if (Math.abs(this.x - player.x) == this.w && player.x > this.x && player.power != 'invulnerable') //when player and object collide on x axis
@@ -554,7 +555,7 @@
 			// boss() is being called only when the enemy is a boss
 
 			this.maxLives = 2; 						// boss has 5 lives
-			if(Colliding(this,player)) 	player.lives = 0	// player is dead if the boss touches him
+			if(rectCollision(this,player)) 	player.lives = 0	// player is dead if the boss touches him
 
 			if(this.currentLives == 0)	{	//boss dead 
 				game.boss_fight_permission = false;
@@ -592,7 +593,7 @@
 				return;
 			}
 			// Math.abs(this.x - randomTile.x) <= (this.w > randomTile.w ? this.w : randomTile.w)
-			if (Colliding(this, randomTile)) // random tile collision
+			if (rectCollision(this, randomTile)) // random tile collision
 			{
 				clearInterval(ImpactXInterval);
 				intervalOngoing = false;
@@ -611,7 +612,7 @@
 				return;
 			}
 			// Math.abs(this.x - player.x) < (this.w > player.w ? this.w : player.w) && this.y < player.y + player.h 
-			if (Colliding(this, player) && player.power != 'invulnerable') // player X collision
+			if (rectCollision(this, player) && player.power != 'invulnerable') // player X collision
 			{
 				ImpactX(randomTile, 15, true);
 				ImpactX(enemy, 15, true);
@@ -627,7 +628,7 @@
 		}
 		respawn(){
 			this.x = -250;
-			this.x = Colliding(this, randomTile) ? this.x - randomTile.w - this.w : this.x;
+			this.x = rectCollision(this, randomTile) ? this.x - randomTile.w - this.w : this.x;
 			this.y = game.canvas_height - this.h - game.primitive_tile_height;
 			this.currentLives = this.maxLives;
 		}
@@ -690,11 +691,12 @@
 		{
 			this.x=enemy.x;
 			this.y=enemy.y;
-			this.w=enemy.w/3;
-			this.h=enemy.h/3;
+			this.w=15;
+			this.h=15;
 			this.ejected=false;
 			this.toShootOrNotToShoot=100;
 			this.decrement_lives_permission=10;
+			this.className = 'E_Projectile';
 		}
 		draw()
 		{
@@ -741,7 +743,7 @@
 				this.toShootOrNotToShoot=100;
 			}
 			//this.x + this.w > randomTile.x && this.y + this.h > randomTile.y
-			if (Colliding(this, randomTile)) 
+			if (rectCollision(this, randomTile)) 
 			{
 				this.ejected = false;
 				this.toShootOrNotToShoot = 100;
@@ -752,7 +754,7 @@
 			if (this.ejected)
 	     	{
 				 // (Math.abs(this.x - player.x) < (this.w > player.w ? this.w : player.w) && this.y < player.y + player.h)
-		 		if (Colliding(this, player) && player.power != 'invulnerable')
+		 		if (rectCollision(this, player) && player.power != 'invulnerable')
 		    	{
 					this.decrement_lives_permission=HitPlayer1(this.decrement_lives_permission);
 					this.ejected=false;
@@ -876,43 +878,32 @@
 		enemyProjectile.reset();
 		enemyProjectile.draw();
 	}
-	function Colliding(e1, e2)
+	
+	function rectCollision(o1, o2) 
 	{
-		let rEntity = e1.x > e2.x ? e1 : e2;
-		let lEntity = e1.x > e2.x ? e2 : e1;
-
-		if (rEntity instanceof Player)
-			if (rEntity.power === 'invulnerable')
+		if (o1 instanceof Player)
+			if (o1.power === 'invulnerable')
 				return false;
 
-		if (lEntity instanceof Player)
-			if (lEntity.power === 'invulnerable')
-				return false; 
+		if (o2 instanceof Player)
+			if (o2.power === 'invulnerable')
+				return false;
 
-		// if the entity on the left is a player, void check
-		if (lEntity instanceof Player || lEntity instanceof Projectile) return false;
+		let r1x = o1 instanceof PowerUp ? o1.x - o1.r : o1.x;
+		let r1y = o1 instanceof PowerUp ? o1.y - o1.r : o1.y;
+		let r1w = o1 instanceof PowerUp ? o1.r : o1.w;
+		let r1h = o1 instanceof PowerUp ? o1.r : o1.h;
+		let r2x = o2 instanceof PowerUp ? o2.x - o2.r : o2.x;
+		let r2y = o2 instanceof PowerUp ? o2.y - o2.r : o2.y;
+		let r2w = o2 instanceof PowerUp ? o2.r : o2.w;
+		let r2h = o2 instanceof PowerUp ? o2.r : o2.h;
 
-		// 0 index - top left barrier of entity
-		// 1 index - top right barrier of entity
-		// 2 index - top left barrier of entity
-		// 3 index - bottom left barrier of entity
-		let lEntityBarrier = [(lEntity instanceof PowerUp ? lEntity.x - lEntity.r : lEntity.x), 
-		(lEntity.x + (lEntity instanceof PowerUp ? lEntity.r : lEntity.w)), 
-		(lEntity instanceof PowerUp ? lEntity.y - lEntity.r : lEntity.y), 
-		(lEntity instanceof PowerUp ? lEntity.y + lEntity.r : lEntity.y + lEntity.h)];
-
-		let rEntityBarrier = [(rEntity instanceof PowerUp ? rEntity.x - rEntity.r : rEntity.x), 
-		(rEntity.x + (rEntity instanceof PowerUp ? rEntity.r : rEntity.w)), 
-		(rEntity instanceof PowerUp ? rEntity.y - rEntity.r : rEntity.y), 
-		(rEntity instanceof PowerUp ? rEntity.y + rEntity.r : rEntity.y + rEntity.h)];
-		
-		// Collider Check(s)
-		if (lEntityBarrier[1] >= rEntityBarrier[0])
-			if (lEntityBarrier[2] < rEntityBarrier[3])
-				return true; 
+		if (r1x <= r2x + r2w && r1x + r1w >= r2x && r1y < r2y + r2h && r1y + r1h > r2y)
+			return true;
 
 		return false;
 	}
+
 	function rotateAndPaintImage ( context, image, angleInRad , positionX, positionY, axisX, axisY, width, height ) 
 	{
         context.translate( positionX, positionY );
@@ -1053,7 +1044,7 @@
 			randomTile.playerOnTop();
 		}
 	}
-	setInterval(recurring, 16.6666666667); // delenjeto sozdava stutters
+	setInterval(recurring, 16.6666666667);
 	eventHandler();
 	</script>
 </html>
