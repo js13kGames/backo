@@ -361,11 +361,9 @@
 			this.x = 250;
 			this.y = 445;
 			this.r= 5;
-			this.type = null; 	// #1 invulnerable player, #2 player turns around(now facing straight left), can shoot straight, and kills 	
+			this.type = null; 	// #1 invulnerable player, #2 player turns around(now facing straight left), can shoot straight, and kills
 			this.spawned = false;	//enemies with 1 shot a.k.a beast mode
-									// powers should last 3-4 seconds 
 			this.className = 'PowerUp';
-			
 		}
 		draw(){
 			if(this.spawned) {
@@ -701,7 +699,11 @@
 			ctx.globalAlpha = 0.5;	
 		    ctx.fillRect(this.x,this.y,this.w,this.h);
 		    ctx.globalAlpha = 1.0;
-			this.x = player.x-(205+(450-player.y));
+		}
+		move(){
+			if(game.boss_fight_permission) this.x = player.x - (500-player.x)*2 - 190 - (450 - player.y); 	//boss fight
+			else this.x = player.x-(205+(450-player.y));	// normal
+			if(player.power == 'beast') this.x = player.x-(205+(450-player.y)*2) // beast
 		}
 	}
 	class EnemyProjectile
@@ -1046,6 +1048,7 @@
 			game.checkScore();
 			game.drawTiles();
 			aim.draw();
+			aim.move();
 
 			if(!game.boss_fight_permission) {
 				powerup.create_power();
@@ -1062,6 +1065,7 @@
 			randomTile.playerOnTop();
 		}
 	}
+
 	setInterval(recurring, 16.6666666667);
 	eventHandler();
 	</script>
