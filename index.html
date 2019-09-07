@@ -297,13 +297,14 @@
 			if(player.power == 'beast')
 				this.acceleration = 7 	// when player goes from beast to invulnerable, reset the accel of the projectile
 
-			if (this.ejected)
-			{
-				rotateAndPaintImage(ctx,karambit,this.rotationSpeed,this.x,this.y,this.w/2,this.h/2,this.w,this.h)
-				this.rotationSpeed+=0.3;
-			}
+			if (!this.ejected)
+				ctx.drawImage(karambit, this.x, this.y, this.w, this.h);
+
 			else
-			ctx.drawImage(karambit, this.x, this.y, this.w, this.h);	
+				{
+					rotateAndPaintImage(ctx,karambit,this.rotationSpeed,this.x,this.y,this.w/2,this.h/2,this.w,this.h)
+				    this.rotationSpeed+=0.3;
+				}
 		}
 		ascertainMovement()
 		{
@@ -328,6 +329,9 @@
 				this.y += this.gravityForce;
 			}
 			if(this.y >= 460){
+				this.y_dir = -1;
+				this.x_dir = -1; 
+				this.x = -200;
 				this.ejected = false;				// dissapear when it touches the ground
 			}
 
