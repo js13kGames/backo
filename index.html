@@ -346,10 +346,13 @@
 			}
 
 			if (rectCollision(this, enemy)) // if hits an enemy
-			{ 
-				enemy.negativeCollision = true;
+			{
+				if(this.ejected) 
+				{
+					enemy.negativeCollision = true;
 				this.y_dir=-1;		
 				return;
+				}			
 			}
 		}
 	}
@@ -648,33 +651,33 @@
 			}	
 		}
 		randomlymove(){
-			if(!game.boss_fight_permission) {
-                if (Math.abs(this.x - randomTile.x)>10)
+			if(!game.boss_fight_permission) { 
+                if (Math.abs(this.x - randomTile.x)>10) // if far from tile (10 units)
 				{
 					this.hitTile = false;
 				}
-				this.randomMovement = Math.random()*50+1;
+				this.randomMovement = Math.random()*50+1; //decide when to move (when random value is >48.9)
 				if (this.randomMovement>48.9)
 				{
 					this.moving=true;
 					this.randomMovementCountdown=10;
 				}
 
-				if (Math.abs(this.x - randomTile.x) <= (this.w > randomTile.w ? this.w : randomTile.w)) 
+				if (Math.abs(this.x - randomTile.x) <= (this.w > randomTile.w ? this.w : randomTile.w)) //collsiion with tile
 				{
 					this.hitTile=true;
 					this.randomXdir *=-1
 					this.x += 7*this.randomXdir;
 				}
 				
-				else if(this.moving && this.randomMovementCountdown > 0)
+				else if(this.moving && this.randomMovementCountdown > 0)  // move when conditions are met
 				{
 					this.x += 3*this.randomXdir;
 					this.randomMovementCountdown--;
 				}
-				else 
+				else //when stopping movement
 				{
-					this.moving=false;
+					this.moving=false;  
 					this.randomMovementCountdown=50;
 					if (!this.hitTile)
 					this.randomXdir *= -1;
