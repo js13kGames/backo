@@ -76,8 +76,7 @@
 		tiles.push(new Tile(i,475,'basic'));				//pushing the initial tiles to the array so they can be drawn immediately
 	var firstTile = tiles[0];
 	tiles.push(new Tile(firstTile.x - 25, 475, 'basic'));
-	class Game 
-	{
+	class Game {
 		constructor(canvas_width, canvas_height) 
 		{
 			this.gravity = true;
@@ -110,7 +109,7 @@
 					ctx.fillStyle = my_gradient;
 					ctx.fillRect(0, 0, this.canvas_width, this.canvas_height);
 					return;
-				} else {
+				} else{
 					var my_gradient = ctx.createLinearGradient(0, 0, 0, 320);
 					my_gradient.addColorStop(0, "darkblue");
 					my_gradient.addColorStop(1, "lightblue");
@@ -152,8 +151,7 @@
 			}
 		}
 	}
-	class Player 
-	{
+	class Player {
 		constructor() 
 		{
 			this.health = 100;
@@ -275,8 +273,7 @@
 			}
 		}
 	}
-	class Projectile 
-	{
+	class Projectile {
 		constructor(x, y, w, h) 
 		{
 			this.x = x;
@@ -408,7 +405,7 @@
 			if(!this.spawned) {
 				if (game.leftArr && !randomTile.hitPlayer) { 
 					let rng = Math.random();
-					if(rng <= 0.005) {					// chance to spawn a powerup
+					if(rng <= 0.2) {					// chance to spawn a powerup
 						let rngType = Math.random();
 						if(rngType >= 0.7)
 							this.type = 'invulnerable'		//70 chance of getting the invulnerable powerup, 30 for beast mode
@@ -433,8 +430,7 @@
 			}
 		}
 	}
-	class RandomTile 
-	{
+	class RandomTile {
 		constructor(w, tile) 
 		{
 			this.x = -100;
@@ -522,8 +518,7 @@
 		}
 	}
 	cloud = new Cloud();
-	class Enemy 
-	{
+	class Enemy {
 		constructor() 
 		{
 			this.w = player.w * 2;
@@ -573,7 +568,8 @@
 				player.addtoscore(100);
 				player.lives++;
 				player.x = 450;
-				this.type = 'normal'
+				current_player_mode = null;
+				this.type = 'normal';
 				this.respawn();
 				return;
 			}
@@ -723,8 +719,7 @@
 			if(player.power == 'beast') this.x = player.x-(325 + (450 - player.y)*2) // beast
 		}
 	}
-	class EnemyProjectile
-	{
+	class EnemyProjectile{
 		constructor()
 		{
 			this.x = enemy.x + enemy.w / 1.5;
@@ -803,8 +798,7 @@
 		}
 	}
 	game = new Game(500, 500);
-	function DeclareGameParameters()
-	{
+	function DeclareGameParameters(){
 		
 	    randomTile = new RandomTile(100, baseTile);
 	    player = new Player();
@@ -813,8 +807,7 @@
 	    enemyProjectile = new EnemyProjectile();
 	    aim = new Aim();
 	}
-    function ScoreText()
-	{
+    function ScoreText(){
 		ctx.font = "35px Impact";
 		ctx.fillStyle = gradient;
 		ctx.textAlign = "left";
@@ -825,8 +818,7 @@
 			gameFinished=true;
 		} 
 	}
-	function eventHandler() 	
-	{
+	function eventHandler() 	{
 		window.addEventListener('keydown', function(event) 
 		{
 			if (!gameStarted && gameFinished)
@@ -860,8 +852,7 @@
 
 		}, false);
 	}
-	function ImpactX(entity, repetitions, reverse = false) 
-	{
+	function ImpactX(entity, repetitions, reverse = false) {
 		if (intervalOngoing) return;
 		intervalOngoing = true;
 		let x = 0;
@@ -907,8 +898,7 @@
 	    ctx.drawImage(spriteImage, -sourceX, sourceY, spriteWidth, spriteHeight);
 	    ctx.restore();
 	}
-	function EnemyProjectileOrder()
-	{
+	function EnemyProjectileOrder(){
 		enemyProjectile.hitplayer();
 		enemyProjectile.sticktoenemy();
 		enemyProjectile.decidetoshoot();
@@ -916,8 +906,7 @@
 		enemyProjectile.reset();
 		enemyProjectile.draw();
 	}
-	function rectCollision(o1, o2) 
-	{
+	function rectCollision(o1, o2) {
 		if (o1 instanceof Player)
 		{
 			if (o1.x < o2.x && game.leftArr) 
@@ -949,33 +938,28 @@
 
 		return false;
 	}
-
-	function rotateAndPaintImage ( context, image, angleInRad , positionX, positionY, axisX, axisY, width, height ) 
-	{
+	function rotateAndPaintImage ( context, image, angleInRad , positionX, positionY, axisX, axisY, width, height ) {
         context.translate( positionX, positionY );
         context.rotate( angleInRad );
         context.drawImage( image, -axisX, -axisY, width, height );
         context.rotate( -angleInRad );
         context.translate( -positionX, -positionY );
 	}
-	function HitPlayer1(decrement_lives_permission)
-	{
+	function HitPlayer1(decrement_lives_permission){
 		if(decrement_lives_permission == 10) {
 					player.lives --;		
 					decrement_lives_permission--;
 				}
 		return decrement_lives_permission;
 	}
-	function HitPlayer2(decrement_lives_permission)
-	{
+	function HitPlayer2(decrement_lives_permission){
 		if(decrement_lives_permission == 0)
 				decrement_lives_permission = 10;					//fixes the bug that took 2 lives instead of 1
 			if(decrement_lives_permission != 10)
 				decrement_lives_permission--;
 		return decrement_lives_permission;
 	}
-	function EnemyOrder() 
-	{
+	function EnemyOrder() {
 		enemy.draw();
 		enemy.healthbar();
 		if(game.boss_fight_permission) enemy.boss();
@@ -984,14 +968,12 @@
 		enemy.ascertainCollision();
 		enemy.randomlymove();
 	}
-	function ProjectileOrder() 
-	{
+	function ProjectileOrder() {
 		projectile.ascertainMovement();
 		projectile.ascertainCollision();
 		projectile.draw();
 	}
-	function PlayerOrder() 
-	{
+	function PlayerOrder() {
 		player.ascertainGravity();
 		player.jump();
 		player.move();
@@ -999,8 +981,7 @@
 		player.processLives();
 		player.powerender()
 	}
-	function GameFinishedScreen()
-	{
+	function GameFinishedScreen(){
 		var my_gradient = ctx.createLinearGradient(0, 0, canvas.width, 0);
 		my_gradient.addColorStop("0"," magenta");
 		my_gradient.addColorStop("0.5", "yellow");
@@ -1010,8 +991,7 @@
         ctx.fillText("Game finished!", canvas.width/2, canvas.height/2-100); 
 		ctx.fillText("Press Enter to restart!", canvas.width/2, canvas.height/2); 
 	}
-	function StartScreenText()
-	{
+	function StartScreenText(){
 		ctx.fillStyle = "brown";
 		ctx.textAlign = "center";
 		ctx.font = "20px Impact";
@@ -1039,8 +1019,7 @@
 		ctx.fillStyle="brown";
 		ctx.fillText("Destroy everything in your path!", 250,480)
 	}
-	function WaitForStart()
-	{
+	function WaitForStart(){
 		if(!gameFinished)
 		{
 			game.boss_fight_permission = false;
@@ -1088,8 +1067,7 @@
 		GameFinishedScreen();	
 	}
 	powerup = new PowerUp();
-	function recurring() 
-	{
+	function recurring() {
 		game.drawCanvas();
 
 		if(!gameStarted)
@@ -1100,20 +1078,19 @@
 			game.drawTiles();
 			aim.draw();
 			aim.move();
-
 			if(!game.boss_fight_permission) {
 				powerup.create_power();
 				powerup.check_collision();
 				cloud.draw();
 				randomTile.appearnow();
 			}
-
 			EnemyProjectileOrder();
 			EnemyOrder();
 			PlayerOrder();
 			ProjectileOrder();
 			ScoreText();
 			randomTile.playerOnTop();
+			console.log(player.power)
 		}
 	}
 
