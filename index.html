@@ -616,6 +616,7 @@
 
 			if (rectCollision(this, randomTile)) // random tile collision
 			{
+				if (intervalOngoing) this.dead();
 				clearInterval(ImpactXInterval);
 				intervalOngoing = false;
 				return;
