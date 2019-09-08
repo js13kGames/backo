@@ -409,7 +409,7 @@
 							this.type = 'invulnerable'		//70 chance of getting the invulnerable powerup, 30 for beast mode
 						else 
 							this.type = 'beast';
-							if (randomTile.x > 0)
+							if (randomTile.x > 0 && randomTile.x<600)
 		                  	this.x=-Math.random()*250+50;
 			                else this.x=randomTile.x-Math.random()*250+50;
 						    this.spawned = true;
