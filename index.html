@@ -537,6 +537,7 @@
 			this.randomMovementCountdown = 10;
 			this.type = 'normal';
 			this.consecutive_kills = 0;
+			this.hitTile=  false;
 		}
 		draw(){
 			if(enemy.currentLives != 0){
@@ -647,7 +648,10 @@
 		}
 		randomlymove(){
 			if(!game.boss_fight_permission) {
-
+                if (Math.abs(this.x - randomTile.x)>10)
+				{
+					this.hitTile = false;
+				}
 				this.randomMovement = Math.random()*50+1;
 				if (this.randomMovement>48.9)
 				{
@@ -657,6 +661,7 @@
 
 				if (Math.abs(this.x - randomTile.x) <= (this.w > randomTile.w ? this.w : randomTile.w)) 
 				{
+					this.hitTile=true;
 					this.randomXdir *=-1
 					this.x += 7*this.randomXdir;
 				}
@@ -670,6 +675,7 @@
 				{
 					this.moving=false;
 					this.randomMovementCountdown=50;
+					if (!this.hitTile)
 					this.randomXdir *= -1;
 				}
 			}
