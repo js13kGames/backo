@@ -348,9 +348,7 @@
 
 			if (rectCollision(this, randomTile)) // if hits a random tile
 			{
-				this.y_dir = -1;
-				this.x_dir = -1; 
-				this.ejected = false;
+				this.x_dir *= -1;
 				return;
 			}
 
@@ -658,7 +656,7 @@
 		}
 		randomlymove(){
 			if(!game.boss_fight_permission) {
-                if (Math.abs(this.x - randomTile.x)>10)
+                if (Math.abs(this.x - randomTile.x)>35)
 				{
 					this.hitTile = false;
 				}
@@ -738,8 +736,10 @@
 		}
 		draw()
 		{	
-			if(enemy.currentLives != 0 && this.ejected)
+			if(this.ejected)
 				ctx.drawImage(enemyProjectileImage, this.x, this.y, this.w, this.h);
+			else
+				ctx.drawImage(emptyImage, this.x, this.y, this.w, this.h);
 		}
 		sticktoenemy()
 		{
