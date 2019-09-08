@@ -986,10 +986,39 @@
 		my_gradient.addColorStop("0"," magenta");
 		my_gradient.addColorStop("0.5", "yellow");
 		my_gradient.addColorStop("1.0", "purple");
-		ctx.fillStyle = my_gradient;
+		ctx.fillStyle = "red";
 		ctx.textAlign = "center";
         ctx.fillText("Game finished!", canvas.width/2, canvas.height/2-100); 
 		ctx.fillText("Press Enter to restart!", canvas.width/2, canvas.height/2); 
+	}
+	function StartScreenText()
+	{
+		ctx.fillStyle = "brown";
+		ctx.textAlign = "center";
+		ctx.font = "20px Impact";
+		ctx.fillText("Use arrow keys to move!", 105,300);
+		ctx.fillText("Press Space to jump!",400,300);
+		ctx.fillText("Power ups:",250,350)
+        //draw white power info
+		ctx.beginPath();						// can't be touched by enemies, no collision whatsoever
+      	ctx.arc(130, 380, 5, 0, 2 * Math.PI, false);
+ 		ctx.fillStyle = 'white';
+  		ctx.stroke();
+ 		ctx.fill();		
+		ctx.fillStyle = "lightyellow";
+		ctx.fillText("- Player becomes Ethereal!",250,387)
+		//draw black power info
+		ctx.beginPath();						// can't be touched by enemies, no collision whatsoever
+      	ctx.arc(130, 410, 5, 0, 2 * Math.PI, false);
+ 		ctx.fillStyle = 'black';
+  		ctx.stroke();
+ 		ctx.fill();
+		ctx.fillText("- Player gains Beast Mode!",250,417)		
+		//game info
+		ctx.fillStyle="brown";
+		ctx.fillText("Objective:", 250,450)
+		ctx.fillStyle="brown";
+		ctx.fillText("Destroy everything in your path!", 250,480)
 	}
 	function WaitForStart()
 	{
@@ -1008,13 +1037,10 @@
         ctx.fillText("„Бак“", canvas.width/2, canvas.height/2-100); 
 		//start game text
 		my_gradient = ctx.createLinearGradient(0, 0, 320, 0);
-		ctx.fillStyle = my_gradient;
+		ctx.fillStyle = "red";
         ctx.textAlign = "center";
 		if (flashingTextTimer < 30) //edna boja 30 ciklusi
 		{
-			my_gradient.addColorStop("0"," magenta");
-		    my_gradient.addColorStop("0.5", "yellow");
-		    my_gradient.addColorStop("1.0", "purple");
 			ctx.fillText("PRESS ENTER TO START!", canvas.width/2, canvas.height/2); 
 			flashingTextTimer++;
 		}
@@ -1023,18 +1049,18 @@
 			my_gradient.addColorStop("0"," magenta");
 		    my_gradient.addColorStop("0.5", "orange");
 		    my_gradient.addColorStop("1.0", "blue");
+			ctx.fillStyle = "lightyellow";
 			ctx.fillText("PRESS ENTER TO START!", canvas.width/2, canvas.height/2); 
 			flashingTextTimer2--;
         }
 		else 
 		{
-			my_gradient.addColorStop("0"," magenta");
-		    my_gradient.addColorStop("0.5", "orange");
-		    my_gradient.addColorStop("1.0", "purple");
+			ctx.fillStyle = "red";
 			ctx.fillText("PRESS ENTER TO START!", canvas.width/2, canvas.height/2); 
 			flashingTextTimer=0;
 			flashingTextTimer2=30;
 		}
+		StartScreenText() // pokazi startscreen
 		//crta player ikona pod tekstot
 		//ctx.drawImage(characterSpriteDefault,250,350,20,20);
 		DeclareGameParameters();
