@@ -410,8 +410,8 @@
 						else 
 							this.type = 'beast';
 							if (randomTile.x > 0 && randomTile.x<600)
-		                  	this.x=-Math.random()*250+50;
-			                else this.x=randomTile.x-Math.random()*250+50;
+		                  	this.x=-250
+			                else this.x=randomTile.x-250;
 						    this.spawned = true;
 					}
 				}
@@ -634,9 +634,10 @@
 			this.decrement_lives_permission= HitPlayer2(this.decrement_lives_permission);
 		}
 		respawn(){
-			if (randomTile.x > 0)
+			if (randomTile.x < 0)
+			this.x=randomTile.x-250;			
+			else 
 			this.x=-250;
-			else this.x=randomTile.x-250;
 			this.x = rectCollision(this, randomTile) ? this.x - randomTile.w - this.w : this.x;
 			this.y = game.canvas_height - this.h - game.primitive_tile_height;
 			this.currentLives = this.maxLives;
