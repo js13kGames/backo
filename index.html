@@ -328,10 +328,12 @@
             if(this.x >= game.canvas_width)
 				this.x_dir *= -1;						// bounce off of right wall
 
-			if(this.x <= 400 && !game.boss_fight_permission){
-				this.y_dir = 0;						// apply gravity when it reaches a certain point
-				this.y += this.gravityForce;
+
+			if(this.x <= (player.power == 'beast' ? 300 : 400) && !game.boss_fight_permission){
+					this.y_dir = 0;						// apply gravity when it reaches a certain point
+					this.y += this.gravityForce;
 			}
+
 			if(this.y >= 460){
 				this.y_dir = -1;
 				this.x_dir = -1; 
@@ -718,7 +720,7 @@
 		move(){
 			if(game.boss_fight_permission) this.x = player.x - (500-player.x)*2 - 190 - (450 - player.y); 	//boss fight
 			else this.x = player.x-(205+(450-player.y));	// normal
-			if(player.power == 'beast') this.x = player.x-(205+(450-player.y)*2) // beast
+			if(player.power == 'beast') this.x = player.x-(325 + (450 - player.y)*2) // beast
 		}
 	}
 	class EnemyProjectile
