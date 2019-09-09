@@ -1,1128 +1,1081 @@
 <html>
-	<head>
-		<style>
-			#canvas {
-				text-align: center;
-			}
-		</style>
-	</head>
-	<body>
-		<div id='canvas'>
-			<canvas id="game" width="500" height="500"></canvas>
-		</div>
-	</body>
-	<script>
-	// GameState variables
-	var gameFinished = false;
-	var current_player_mode = null;
-	var gameStarted = false;
-	var flashingTextTimer = 0; //se koristat vo WaitForStart() za broenje na ciklusi
-	var flashingTextTimer2 = 30;
-	// Canvas Globals
-	var canvas = document.getElementById('game');
-	var ctx = canvas.getContext('2d');
-    //color gradient
-	var gradient = ctx.createLinearGradient(0, 0, canvas.width, 0);
-        gradient.addColorStop("0"," magenta");
-        gradient.addColorStop("0.5", "yellow");
-        gradient.addColorStop("1.0", "orange");
-	// Image Globals
-	var emptyImage = new Image();
-	var characterSpriteDefault = new Image();
-	var characterSpriteWalking = new Image();
-	var karambit = new Image();
-	var baseTile = new Image();
-	var heart = new Image();
-	var enemyImage = new Image();
-	var bossImage = new Image();
-	var enemyProjectileImage = new Image();
+<head>
+<style>
+#canvas {
+text-align: center;
+}
+</style>
+</head>
+<body>
+<div id='canvas'>
+<canvas id="game" width="500" height="500"></canvas>
+</div>
+</body>
+<script>
+var gameFinished = false;
+var current_player_mode = null;
+var gameStarted = false;
+var flashingTextTimer = 0;
+var flashingTextTimer2 = 30;
+var canvas = document.getElementById('game');
+var ctx = canvas.getContext('2d');
+var gradient = ctx.createLinearGradient(0, 0, canvas.width, 0);
+gradient.addColorStop("0", " magenta");
+gradient.addColorStop("0.5", "yellow");
+gradient.addColorStop("1.0", "orange");
+var emptyImage = new Image();
+var characterSpriteDefault = new Image();
+var characterSpriteWalking = new Image();
+var karambit = new Image();
+var baseTile = new Image();
+var heart = new Image();
+var enemyImage = new Image();
+var bossImage = new Image();
+var enemyProjectileImage = new Image();
+baseTile.src = "../js13kgames_entry/assets/1.png"
+characterSpriteDefault.src = "../js13kgames_entry/assets/char1.png"
+characterSpriteWalking.src = "../js13kgames_entry/assets/char2.png"
+karambit.src = "../js13kgames_entry/assets/kar.png"
+heart.src = "../js13kgames_entry/assets/heart.png"
+enemyImage.src = "../js13kgames_entry/assets/en1.png"
+bossImage.src = "../js13kgames_entry/assets/en2.png"
+enemyProjectileImage.src = "../js13kgames_entry/assets/bullet.png"
+var ImpactXInterval;
+var intervalOngoing = false;
+class Tile
+{
+   constructor(x, y, type)
+   {
+      this.x = x;
+      this.y = y;
+      this.type = type;
+      this.w = 25;
+      this.h = 25;
+   }
+}
+var tiles = [];
+for (var i = 0; i < 500; i += 25) tiles.push(new Tile(i, 475, 'basic'));
+var firstTile = tiles[0];
+tiles.push(new Tile(firstTile.x - 25, 475, 'basic'));
+class Game
+{
+   constructor(canvas_width, canvas_height)
+   {
+      this.gravity = true;
+      this.status = 2;
+      this.leftArr = false;
+      this.upArrow = false;
+      this.rightArr = false;
+      this.slope = false;
+      this.canvas_width = canvas_width;
+      this.canvas_height = canvas_height;
+      this.primitive_tile_width = 25;
+      this.primitive_tile_height = 25;
+      this.className = 'Game';
+      this.boss_fight_permission = false;
+   }
+   drawCanvas()
+   {
+      if (this.boss_fight_permission)
+      {
+         var my_gradient = ctx.createLinearGradient(0, 0, 0, 320);
+         my_gradient.addColorStop(0, "MediumOrchid");
+         my_gradient.addColorStop(1, "darkslategrey");
+         ctx.fillStyle = my_gradient;
+         ctx.fillRect(0, 0, this.canvas_width, this.canvas_height);
+      }
+      else
+      if (current_player_mode == 'beast')
+      {
+         var my_gradient = ctx.createLinearGradient(0, 0, 0, 320);
+         my_gradient.addColorStop(0, "darkblue");
+         my_gradient.addColorStop(1, "saddlebrown");
+         ctx.fillStyle = my_gradient;
+         ctx.fillRect(0, 0, this.canvas_width, this.canvas_height);
+         return;
+      }
+      else
+      {
+         var my_gradient = ctx.createLinearGradient(0, 0, 0, 320);
+         my_gradient.addColorStop(0, "darkblue");
+         my_gradient.addColorStop(1, "lightblue");
+         ctx.fillStyle = my_gradient;
+         ctx.fillRect(0, 0, this.canvas_width, this.canvas_height);
+         return;
+      }
+   }
+   drawTiles()
+   {
+      if (this.leftArr && !randomTile.hitPlayer && !this.boss_fight_permission)
+      {
+         var lastTile = tiles[tiles.length - 1];
+         tiles.push(new Tile(lastTile.x - this.primitive_tile_width, 475, 'basic'));
+         for (var i = 0; i < tiles.length; i++)
+         {
+            ctx.drawImage(baseTile, 0, 0, 16, 16, tiles[i].x, tiles[i].y, this.primitive_tile_width, this.primitive_tile_height);
+            tiles[i].x += player.velocity;
+         }
+      }
+      else
+         for (var i = 0; i < tiles.length; i++) ctx.drawImage(baseTile, 0, 0, 16, 16, tiles[i].x, tiles[i].y, this.primitive_tile_width, this.primitive_tile_height);
+   }
+   checkScore()
+   {
+      if (player.currentScore == 50)
+      {
+         randomTile.x = 600;
+         this.boss_fight_permission = true;
+         enemy.type = 'boss';
+         player.power = null;
+      }
+   }
+}
+class Player
+{
+   constructor()
+   {
+      this.health = 100;
+      this.w = 20;
+      this.h = 30;
+      this.x = 450;
+      this.y = game.canvas_height - game.primitive_tile_height - this.h - 5;
+      this.jumpForce = 15;
+      this.verticalCollision = false;
+      this.horizontalCollision = false;
+      this.oldY = 0;
+      this.jumpHeight = 90;
+      this.velocity = 5;
+      this.gravityForce = 5;
+      this.className = 'Player';
+      this.enemyBounce = false;
+      this.playerWasOnTop = false;
+      this.lives = 3;
+      this.timerForFirstImage = 0;
+      this.timerForSecondImage = 0;
+      this.hangTime = 5;
+      this.stopAscend = false;
+      this.currentScore = 0;
+      this.power = null;
+      this.powerEnderCountdown = 300;
+   }
+   draw()
+   {
+      if (this.power == 'invulnerable')
+      {
+         animatePlayer(characterSpriteDefault, emptyImage, ctx, this.x, this.y, this.w, this.h);
+         return;
+      }
+      if (game.leftArr && player.power == 'beast')
+      {
+         if (player.power == 'beast' && game.leftArr)
+         {
+            animateFlipImage(characterSpriteDefault, characterSpriteWalking, ctx, this.w, this.h);
+            return;
+         }
+         animatePlayer(characterSpriteDefault, characterSpriteWalking, ctx, this.x, this.y, this.w, this.h);
+      }
+      if (game.leftArr && !randomTile.hitPlayer) animatePlayer(characterSpriteDefault, characterSpriteWalking, ctx, this.x, this.y, this.w, this.h);
+      else
+      {
+         if (player.power === 'beast')
+         {
+            mirrorImage(ctx, characterSpriteDefault, this.x, this.y, this.w, this.h);
+            return;
+         }
+         ctx.drawImage(characterSpriteDefault, this.x, this.y, this.w, this.h);
+      }
+   }
+   jump()
+   {
+      if (game.upArrow && this.verticalCollision)
+         if (!this.stopAscend)
+         {
+            this.oldY += this.jumpForce;
+            this.y -= this.jumpForce;
+         }
+   }
+   move()
+   {
+      if (game.boss_fight_permission && game.leftArr && this.x >= 0) this.x -= 2;
+      if (game.boss_fight_permission && game.rightArr && this.x + this.w <= 500) this.x += 2;
+   }
+   ascertainGravity()
+   {
+      if (!this.verticalCollision && !this.playerWasOnTop) this.y += 5
+      if (this.y + this.h >= 475 || this.playerWasOnTop)
+      {
+         this.jumpHeight = 90;
+         this.verticalCollision = true;
+         this.oldY = 0;
+         this.stopAscend = false;
+         this.hangTime = 5;
+      }
+      else if (this.oldY == this.jumpHeight)
+      {
+         if (this.hangTime == 0)
+         {
+            game.upArrow = false;
+            this.verticalCollision = false;
+         }
+         else
+         {
+            this.stopAscend = true;
+            this.hangTime--;
+         }
+      }
+   }
+   processLives()
+   {
+      this.drawLives();
+      if (this.lives == 0)
+      {
+         enemy.x -= 30;
+         this.lives = 3;
+         gameStarted = false;
+         enemy.respawn();
+         WaitForStart();
+      }
+   }
+   drawLives()
+   {
+      for (let i = 1; i <= this.lives; i++) ctx.drawImage(heart, game.canvas_width - i * 25, 10, 16, 16);
+   }
+   powerender()
+   {
+      if (this.power != null)
+      {
+         this.powerEnderCountdown--;
+         if (this.powerEnderCountdown == 0)
+         {
+            this.power = null;
+            current_player_mode = null;
+         }
+      }
+   }
+}
+class Projectile
+{
+   constructor(x, y, w, h)
+   {
+      this.x = x;
+      this.y = y;
+      this.w = w;
+      this.h = h;
+      this.ejected = false;
+      this.hitEnemy = false;
+      this.x_dir = 1;
+      this.y_dir = -1
+      this.acceleration = 7;
+      this.gravityForce = 8;
+      this.rotationSpeed = 0;
+      this.className = 'Projectile';
+   }
+   draw()
+   {
+      if (player.power == 'beast')
+      {
+         this.x = this.x - player.w - 10;
+         this.acceleration = 3;
+      }
+      if (player.power == 'beast') this.acceleration = 7
+      if (!this.ejected) ctx.drawImage(karambit, this.x, this.y, this.w, this.h);
+      else
+      {
+         rotateAndPaintImage(ctx, karambit, this.rotationSpeed, this.x, this.y, this.w / 2, this.h / 2, this.w, this.h)
+         this.rotationSpeed += 0.3;
+      }
+   }
+   ascertainMovement()
+   {
+      if (!this.ejected)
+      {
+         this.x_dir = 1;
+         this.y_dir = -1;
+         this.x = player.x + 7;
+         this.y = player.y + 6;
+         return;
+      }
+      this.x += this.x_dir * this.acceleration;
+      this.y += this.y_dir * this.acceleration;
+   }
+   ascertainCollision()
+   {
+      if (this.x >= game.canvas_width) this.x_dir *= -1;
+      if (this.x <= (player.power == 'beast' ? 300 : 400) && !game.boss_fight_permission)
+      {
+         this.y_dir = 0;
+         this.y += this.gravityForce;
+      }
+      if (this.y >= 460)
+      {
+         this.y_dir = -1;
+         this.x_dir = -1;
+         this.x = -200;
+         this.ejected = false;
+      }
+      if (game.boss_fight_permission && this.x <= player.x - 100)
+      {
+         this.y_dir = 0;
+         this.y += this.gravityForce
+      }
+      if (rectCollision(this, randomTile))
+      {
+         this.y_dir = -1;
+         this.x_dir = -1;
+         return;
+      }
+      if (rectCollision(this, enemy))
+      {
+         if (this.ejected)
+         {
+            ImpactX(enemy, 15);
+            enemy.currentLives--;
+            if (enemy.currentLives < 1 && enemy.type !== 'boss') enemy.dead();
+            this.ejected = false;
+            this.ascertainMovement();
+            return;
+         }
+      }
+   }
+}
+class PowerUp
+{
+   constructor()
+   {
+      this.x = -300;
+      this.y = 465;
+      this.r = 5;
+      this.type = null;
+      this.spawned = false;
+      this.className = 'PowerUp';
+   }
+   draw()
+   {
+      if (this.spawned)
+      {
+         this.x = randomTile < 0 ? randomTile.x - this.r * 2 : -300;
+         if (this.type == 'invulnerable')
+         {
+            ctx.beginPath();
+            ctx.arc(this.x, this.y, this.r, 0, 2 * Math.PI, false);
+            ctx.fillStyle = 'white';
+            ctx.stroke();
+            ctx.fill();
+            this.move();
+         }
+         else if (this.type == 'beast')
+         {
+            ctx.beginPath();
+            ctx.arc(this.x, this.y, this.r, 0, 2 * Math.PI, false);
+            ctx.fillStyle = 'black';
+            ctx.stroke();
+            ctx.fill();
+            this.move();
+         }
+      }
+   }
+   move()
+   {
+      if (this.y + this.r <= 470) this.y += 5;
+      if (game.leftArr && !randomTile.hitPlayer) this.x += player.velocity;
+      if (this.x >= game.canvas_width + this.r)
+      {
+         this.spawned = false;
+         this.x = -250;
+      }
+   }
+   create_power()
+   {
+      if (!this.spawned)
+      {
+         if (game.leftArr && !randomTile.hitPlayer)
+         {
+            let rng = Math.random();
+            if (rng <= 0.005)
+            {
+               let rngType = Math.random();
+               if (rngType >= 0.7) this.type = 'invulnerable'
+               else this.type = 'beast';
+               this.spawned = true;
+            }
+         }
+      }
+      else this.draw();
+   }
+   check_collision()
+   {
+      if (this.spawned && rectCollision(this, player))
+      {
+         player.powerEnderCountdown = 300;
+         player.power = this.type;
+         current_player_mode = this.type;
+         this.spawned = false;
+         this.x = -250;
+      }
+   }
+}
+class RandomTile
+{
+   constructor(w, tile)
+   {
+      this.x = -100;
+      this.w = w;
+      this.h = 40;
+      this.y = 445 - (30 * (this.h / 30 - 1)); //makes sure object is always above ground
+      this.tile = tile;
+      this.random = 0;
+      this.hitPlayer = false;
+      this.className = 'RandomTile';
+   }
+   appearnow()
+   {
+      ctx.drawImage(this.tile, this.x, this.y, this.w, this.h);
+      if (game.leftArr && !this.hitPlayer) this.x += player.velocity;
+      if (this.x > 600) this.disappear();
+      if (rectCollision(this, player)) this.hitPlayer = true;
+      else this.hitPlayer = false;
+   }
+   playerOnTop()
+   {
+      if (Math.abs(this.y - player.y) == 30 && Math.abs(this.x - player.x) < this.w && player.x > this.x - 20 && player.power != 'invulnerable') player.playerWasOnTop = true;
+      else if (player.playerWasOnTop)
+      {
+         player.playerWasOnTop = false;
+         if (!game.upArrow)
+         {
+            game.upArrow = false;
+            player.verticalCollision = false;
+         }
+      }
+   }
+   disappear()
+   {
+      this.appear = false;
+      this.w = 20 * Math.floor((Math.random() * 5) + 1)
+      this.x = enemy.x < 0 ? enemy.x - this.w * 2 : -100;
+      this.h = 10 + 10 * Math.floor((Math.random() * 5) + 1);
+      this.y = 445 - (30 * (this.h / 30 - 1)); //adjust y to new height
+   }
+}
+class Cloud
+{
+   constructor(x, y)
+   {
+      this.cloudX = -300
+      this.cloudY = Math.random() * (200 - 50) + 50
+   }
+   draw()
+   {
+      ctx.beginPath();
+      ctx.moveTo(this.cloudX, this.cloudY);
+      ctx.bezierCurveTo(this.cloudX - 40, this.cloudY + 20, this.cloudX - 40, this.cloudY + 70, this.cloudX + 60, this.cloudY + 70);
+      ctx.bezierCurveTo(this.cloudX + 80, this.cloudY + 100, this.cloudX + 150, this.cloudY + 100, this.cloudX + 170, this.cloudY + 70);
+      ctx.bezierCurveTo(this.cloudX + 250, this.cloudY + 70, this.cloudX + 250, this.cloudY + 40, this.cloudtX + 220, this.cloudY + 20);
+      ctx.bezierCurveTo(this.cloudX + 260, this.cloudY - 40, this.cloudX + 200, this.cloudY - 50, this.cloudX + 170, this.cloudY - 30);
+      ctx.bezierCurveTo(this.cloudX + 150, this.cloudY - 75, this.cloudX + 80, this.cloudY - 60, this.cloudX + 80, this.cloudY - 30);
+      ctx.bezierCurveTo(this.cloudX + 30, this.cloudY - 75, this.cloudX - 20, this.cloudY - 60, this.cloudX, this.cloudY);
+      ctx.closePath();
+      var grdCenterX = 260;
+      var grdCenterY = 80;
+      var grd = ctx.createRadialGradient(grdCenterX, grdCenterY, 10, grdCenterX, grdCenterY, 200);
+      grd.addColorStop(0, "#F9F2F2");
+      grd.addColorStop(1, "#C7B9B9");
+      ctx.fillStyle = grd;
+      ctx.fill();
+      if (game.leftArr && !randomTile.hitPlayer) this.cloudX += player.velocity;
+      if (this.cloudX >= 700) this.cloudX = -300;
+   }
+}
+cloud = new Cloud();
+class Enemy
+{
+   constructor()
+   {
+      this.w = player.w * 2;
+      this.h = player.h * 1.5;
+      this.x = -250;
+      this.y = game.canvas_height - game.primitive_tile_height - this.h - 5;
+      this.maxLives = 2;
+      this.currentLives = this.maxLives;
+      this.verticalCollision = false;
+      this.negativeCollision = false;
+      this.className = 'Enemy';
+      this.decrement_lives_permission = 10;
+      this.moving = false;
+      this.type = 'normal';
+      this.consecutive_kills = 0;
+      this.hitTile = false;
+      this.direction = Math.random() > 0.50 ? -1 : 1;
+      this.appeased = true;
+      this.appeasedAmount = 0;
+      this.bossWidth = this.w * 2;
+      this.bossHeight = this.h * 2;
+   }
+   draw()
+   {
+      if (enemy.currentLives >= 1)
+      {
+         if (enemy.type === 'boss')
+         {
+            this.w = this.bossWidth;
+            this.h = this.bossHeight;
+            ctx.drawImage(bossImage, this.x, this.y - this.h / 2, this.w, this.h);
+         }
+         else
+         {
+            this.w = this.bossWidth / 2;
+            this.h = this.bossHeight / 2;
+            ctx.drawImage(enemyImage, this.x, this.y, this.w, this.h);
+         }
+      }
+   }
+   fall()
+   {
+      if (!this.verticalCollision && !player.playerOnTop) this.y += 5;
+      if (this.y >= 445 + (30 - this.h)) this.verticalCollision = true;
+      else this.verticalCollision = false;
+   }
+   boss()
+   {
+      if (rectCollision(this, player)) player.lives = 0;
+      if (this.currentLives < 1)
+      {
+         game.boss_fight_permission = false;
+         player.currentScore += 100;
+         player.lives++;
+         player.x = 450;
+         current_player_mode = null;
+         this.type = 'normal';
+         this.dead();
+         return;
+      }
+   }
+   move()
+   {
+      if (this.type == 'boss')
+      {
+         if (this.x <= 100) this.x += 5;
+      }
+      if (game.leftArr && !randomTile.hitPlayer && !game.boss_fight_permission) this.x += player.velocity;
+   }
+   ascertainCollision()
+   {
+      if (this.x > 500)
+      {
+         this.respawn();
+         return;
+      }
+      if (rectCollision(this, randomTile))
+      {
+         if (intervalOngoing) this.dead();
+         clearInterval(ImpactXInterval);
+         intervalOngoing = false;
+         return;
+      }
+      if (Math.abs(this.x - player.x) < (this.w > player.w ? this.w : player.w) && this.y == player.y + player.h && player.power != 'invulnerable' && this.type != 'boss')
+      {
+         player.jumpHeight = 180;
+         player.verticalCollision = true;
+         game.upArrow = true;
+         player.stopAscend = false;
+         player.hangTime = 5;
+         this.dead();
+         return;
+      }
+      if (rectCollision(this, player) && player.power != 'invulnerable')
+      {
+         ImpactX(randomTile, 15, true);
+         ImpactX(enemy, 15, true);
+         ImpactX(tiles, 15, true);
+         ImpactX(cloud, 15, true);
+         ImpactX(powerup, 15, true);
+         this.decrement_lives_permission = HitPlayer1(this.decrement_lives_permission);
+         return;
+      }
+      this.decrement_lives_permission = HitPlayer2(this.decrement_lives_permission);
+   }
+   respawn()
+   {
+      this.x = randomTile.x < 0 ? randomTile.x - this.w * 2 : -200;
+      this.x = rectCollision(this, randomTile) ? this.x - randomTile.w - this.w : this.x;
+      this.y = game.canvas_height - this.h - game.primitive_tile_height;
+   }
+   healthbar()
+   {
+      if (this.currentLives != 0)
+      {
+         ctx.fillStyle = 'gray';
+         ctx.fillRect(this.x, enemy.type === 'boss' ? this.y - this.h / 1.5 : this.y - this.h / 3, this.w - this.w / 6, 5);
+         if (this.currentLives <= this.maxLives / 2) ctx.fillStyle = 'red';
+         else ctx.fillStyle = 'green';
+         ctx.fillRect(this.x, enemy.type === 'boss' ? this.y - this.h / 1.5 : this.y - this.h / 3, (this.w - this.w / 6) * ((this.currentLives * 100 / this.maxLives) / 100), 5);
+      }
+   }
+   randomlymove()
+   {
+      if (!game.boss_fight_permission)
+      {
+         if (this.appeased && this.appeasedAmount < 10)
+         {
+            if (rectCollision(this, randomTile)) this.direction *= -1;
+            this.x += 2.5 * this.direction;
+            this.appeasedAmount++;
+         }
+         else
+         {
+            this.direction = Math.random() > 0.35 ? this.direction : this.direction * -1;
+            this.appeased = Math.random() < 0.075 ? true : false;
+            this.appeasedAmount = 0;
+         }
+      }
+   }
+   dead()
+   {
+      enemyProjectile.ejected = false;
+      enemyProjectile.toShootOrNotToShoot = 100;
+      this.consecutive_kills++;
+      if (this.consecutive_kills == 5)
+      {
+         player.lives++;
+         this.consecutive_kills = 0;
+      }
+      player.currentScore += 50;
+      this.maxLives = enemy.type === 'boss' ? 4 : 2;
+      this.currentLives = this.maxLives;
+      this.respawn();
+   }
+}
+class Aim
+{
+   constructor()
+   {
+      this.x = player.x - 205;
+      this.y = 470;
+      this.w = 20;
+      this.h = 5;
+   }
+   draw()
+   {
+      ctx.fillStyle = 'red'
+      ctx.globalAlpha = 0.5;
+      ctx.fillRect(this.x, this.y, this.w, this.h);
+      ctx.globalAlpha = 1.0;
+   }
+   move()
+   {
+      if (game.boss_fight_permission) this.x = player.x - (500 - player.x) * 2 - 190 - (450 - player.y);
+      else this.x = player.x - (205 + (450 - player.y));
+      if (player.power == 'beast') this.x = player.x - (325 + (450 - player.y) * 2)
+   }
+}
+class EnemyProjectile
+{
+   constructor()
+   {
+      this.x = enemy.x + enemy.w / 1.5;
+      this.y = enemy.y + enemy.h / 1.5;
+      this.w = 15;
+      this.h = 10;
+      this.ejected = false;
+      this.toShootOrNotToShoot = 100;
+      this.decrement_lives_permission = 10;
+      this.className = 'E_Projectile';
+   }
+   draw()
+   {
+      if (enemy.currentLives != 0 && this.ejected) ctx.drawImage(enemyProjectileImage, this.x, this.y, this.w, this.h);
+   }
+   sticktoenemy()
+   {
+      if (!this.ejected)
+      {
+         this.x = enemy.x + enemy.w / 1.25;
+         this.y = enemy.type === 'boss' ? enemy.y + enemy.h / 6 : enemy.y + enemy.h / 1.5;
+      }
+   }
+   decidetoshoot()
+   {
+      if (!this.ejected)
+      {
+         this.toShootOrNotToShoot -= 1;
+         if (this.toShootOrNotToShoot < 1) this.ejected = true;
+      }
+   }
+   eject()
+   {
+      if (this.ejected)
+      {
+         if (enemy.type == 'boss') this.x += 7
+         else this.x += 3;
+         if (game.leftArr && !randomTile.hitPlayer)
+         {
+            this.x += 5;
+         }
+      }
+   }
+   reset()
+   {
+      if (this.x > canvas.width + 50)
+      {
+         this.ejected = false;
+         this.toShootOrNotToShoot = 100;
+      }
+      if (rectCollision(this, randomTile))
+      {
+         this.ejected = false;
+         this.toShootOrNotToShoot = 100;
+      }
+   }
+   hitplayer()
+   {
+      if (this.ejected)
+      {
+         if (rectCollision(this, player) && player.power != 'invulnerable')
+         {
+            this.decrement_lives_permission = HitPlayer1(this.decrement_lives_permission);
+            this.ejected = false;
+            this.toShootOrNotToShoot = 100;
+         }
+         this.decrement_lives_permission = HitPlayer2(this.decrement_lives_permission);
+      }
+   }
+}
+game = new Game(500, 500);
 
-	baseTile.src = "../js13kgames_entry/assets/1.png"
-	characterSpriteDefault.src = "../js13kgames_entry/assets/char1.png"
-	characterSpriteWalking.src = "../js13kgames_entry/assets/char2.png"
-	karambit.src = "../js13kgames_entry/assets/kar.png"
-	heart.src = "../js13kgames_entry/assets/heart.png"
-	enemyImage.src = "../js13kgames_entry/assets/en1.png"
-	bossImage.src = "../js13kgames_entry/assets/en2.png"
-	enemyProjectileImage.src = "../js13kgames_entry/assets/bullet.png"
+function DeclareGameParameters()
+{
+   randomTile = new RandomTile(100, baseTile);
+   player = new Player();
+   enemy = new Enemy();
+   projectile = new Projectile(10, 10, 20, 20);
+   enemyProjectile = new EnemyProjectile();
+   aim = new Aim();
+}
 
-	// Uncatogorized Globals
-	var ImpactXInterval;
-	var intervalOngoing = false;
+function ScoreText()
+{
+   ctx.font = "35px Impact";
+   ctx.fillStyle = gradient;
+   ctx.textAlign = "left";
+   ctx.fillText("Score: " + player.currentScore, 7, 35);
+   if (player.currentScore == 1000)
+   {
+      gameStarted = false;
+      gameFinished = true;
+   }
+}
 
-	class Tile {
-		constructor(x,y,type){
-			this.x=x;
-			this.y=y;
-			this.type=type;
-			this.w=25;
-			this.h=25;
-		}
-	}
-	var tiles = [];					
-	for (var i = 0; i < 500; i += 25)
-		tiles.push(new Tile(i,475,'basic'));				//pushing the initial tiles to the array so they can be drawn immediately
-	var firstTile = tiles[0];
-	tiles.push(new Tile(firstTile.x - 25, 475, 'basic'));
+function eventHandler()
+{
+   window.addEventListener('keydown', function(event)
+   {
+      if (!gameStarted && gameFinished)
+      {
+         if (event.keyCode == 13) gameFinished = false;
+      }
+      else if (!gameStarted)
+      {
+         if (event.keyCode == 13) gameStarted = true;
+      }
+      else
+      {
+         if (event.keyCode == 38) game.upArrow = true;
+         if (event.keyCode == 32) projectile.ejected = true;
+         if (event.keyCode == 37) game.leftArr = true;
+         if (event.keyCode == 39) game.rightArr = true;
+      }
+   }, false);
+   window.addEventListener('keyup', function(event)
+   {
+      if (event.keyCode == 37) game.leftArr = false
+      if (event.keyCode == 39) game.rightArr = false;
+   }, false);
+}
 
-	class Game {
-		constructor(canvas_width, canvas_height) 
-		{
-			this.gravity = true;
-			this.status = 2; // 0 intro, 1 menu (selection), 2 gameplay, 3 menu during gameplay
-			this.leftArr = false;
-			this.upArrow = false;
-			this.rightArr = false;
-			this.slope = false;
-			this.canvas_width = canvas_width;
-			this.canvas_height = canvas_height;
-			this.primitive_tile_width = 25;
-			this.primitive_tile_height = 25;
-			this.className = 'Game';
-			this.boss_fight_permission = false;
-		}
-		drawCanvas() 
-		{
-			if(this.boss_fight_permission){
-				var my_gradient = ctx.createLinearGradient(0, 0, 0, 320);
-				my_gradient.addColorStop(0, "MediumOrchid");
-				my_gradient.addColorStop(1, "darkslategrey");
-				ctx.fillStyle = my_gradient;
-				ctx.fillRect(0, 0, this.canvas_width, this.canvas_height);
-			}
-			else
-				if(current_player_mode == 'beast'){
-					var my_gradient = ctx.createLinearGradient(0, 0, 0, 320);
-					my_gradient.addColorStop(0, "darkblue");
-					my_gradient.addColorStop(1, "saddlebrown");
-					ctx.fillStyle = my_gradient;
-					ctx.fillRect(0, 0, this.canvas_width, this.canvas_height);
-					return;
-				} else{
-					var my_gradient = ctx.createLinearGradient(0, 0, 0, 320);
-					my_gradient.addColorStop(0, "darkblue");
-					my_gradient.addColorStop(1, "lightblue");
-					ctx.fillStyle = my_gradient;
-					ctx.fillRect(0, 0, this.canvas_width, this.canvas_height);
-					return;
-				}
-			
-				
-		}
-		drawTiles() 
-		{
-			if (this.leftArr && !randomTile.hitPlayer && !this.boss_fight_permission) //now stops moving when playa is hit by obstacle
-			{ 
-				var lastTile = tiles[tiles.length - 1];
-				tiles.push(new Tile(lastTile.x - this.primitive_tile_width, 475, 'basic'));
-				for (var i = 0; i < tiles.length; i++) 
-				{
-					ctx.drawImage(baseTile, 0, 0, 16, 16, tiles[i].x, tiles[i].y, this.primitive_tile_width, this.primitive_tile_height);
-					tiles[i].x += player.velocity; 
-				}
+function ImpactX(entity, repetitions, reverse = false)
+{
+   if (intervalOngoing) return;
+   intervalOngoing = true;
+   let x = 0;
+   ImpactXInterval = window.setInterval(function()
+   {
+      if (reverse)
+      {
+         game.upArrow = true;
+         player.velocity = -10;
+      }
+      else
+      {
+         entity.x -= 10;
+      }
+      if (++x === repetitions)
+      {
+         if (reverse) player.velocity = 5;
+         intervalOngoing = false;
+         window.clearInterval(ImpactXInterval);
+      }
+   }, 16.6666666667);
+}
 
-				// for (var i = 0; i < tiles.length; i++) 
-				// {
-				// 	if(tiles[i].x <= -100 || tiles[i].x >= 600)			//removing elements from the tiles array;
-				// 		tiles.splice(i,1);								//causes bug
-				// }
-			} 
-			else
-				for (var i = 0; i < tiles.length; i++)
-					ctx.drawImage(baseTile, 0, 0, 16, 16, tiles[i].x, tiles[i].y, this.primitive_tile_width, this.primitive_tile_height);
-		} 
-		checkScore(){
-			if(player.currentScore == 500) {
-				randomTile.x = 600;
-				this.boss_fight_permission = true;
-				enemy.type = 'boss'	
-				player.power = null;
-			}
-		}
-	}
-	class Player {
-		constructor() 
-		{
-			this.health = 100;
-			this.w = 20;
-			this.h = 30;
-			this.x = 450;
-			this.y = game.canvas_height - game.primitive_tile_height - this.h - 5;
-			this.jumpForce = 15;
-			this.verticalCollision = false;
-			this.horizontalCollision = false;
-			this.oldY = 0; 
-			this.jumpHeight = 90;
-			this.velocity = 5;
-			this.gravityForce = 5;
-			this.className = 'Player';
-			this.enemyBounce = false;
-			this.playerWasOnTop = false; //tells the player if he is on top of an object
-			this.lives=3;
-			this.timerForFirstImage=0; //used in animation function to store the number of cycles the current image has been active
-			this.timerForSecondImage=0;
-			this.hangTime = 5; //set to 5 also in lines 420 196
-			this.stopAscend = false;
-			this.currentScore = 0;
-			this.power = null;
-			this.powerEnderCountdown=300;			
-		}
-		draw() 
-		{
-			if(this.power == 'invulnerable') {
-				animatePlayer(characterSpriteDefault, emptyImage, ctx, this.x,this.y,this.w,this.h); 
-				// player blinks when invulnerable
-				return;
-			}
-			if (game.leftArr && player.power == 'beast')
-			{
-				if(player.power == 'beast' && game.leftArr) 
-				{
-					animateFlipImage(characterSpriteDefault, characterSpriteWalking, ctx, this.w, this.h);
-					return;
-				}
-				animatePlayer(characterSpriteDefault, characterSpriteWalking, ctx, this.x, this.y, this.w, this.h);
-			}
-			if(game.leftArr && !randomTile.hitPlayer) // if player "moving" do the animation
-			    animatePlayer(characterSpriteDefault, characterSpriteWalking, ctx, this.x,this.y,this.w,this.h);
-			else
-			{
-				if (player.power === 'beast')
-				{
-					mirrorImage(ctx, characterSpriteDefault, this.x, this.y, this.w, this.h);
-					return;
-				}
-				ctx.drawImage(characterSpriteDefault, this.x, this.y, this.w, this.h);
-			}
-		}
-		jump() 
-		{
-			if (game.upArrow && this.verticalCollision) 
-				if (!this.stopAscend) // ascend untill reaching jump height
-				{
-					this.oldY += this.jumpForce;
-				    this.y -= this.jumpForce;	
-				} 
-		}
-		move(){
-			if(game.boss_fight_permission && game.leftArr && this.x >= 0)
-				this.x -= 2;
-			if(game.boss_fight_permission && game.rightArr && this.x+this.w <= 500)
-				this.x += 2;
-		}
-		ascertainGravity() 
-		{
-			
-			if (!this.verticalCollision && !this.playerWasOnTop) //Fall if player not on ground or on top of object
-				this.y += 5
-			if (this.y+this.h >= 475 || this.playerWasOnTop) //stop falling if on ground or on object
-			{
-				this.jumpHeight = 90;
-				this.verticalCollision = true;
-				this.oldY = 0;
-				this.stopAscend=false;
-				this.hangTime=5; 
-				
-			} 
-			else if (this.oldY == this.jumpHeight) //stop ascending when reaching max jump height
-			{
-				if (this.hangTime == 0)
-				{
-					game.upArrow = false;
-				    this.verticalCollision = false;
-				}
-				else 
-				{
-					this.stopAscend=true;
-					this.hangTime--;
-				}
-			}
-		}
-		processLives(){
-			this.drawLives();
+function animatePlayer(defaultImage, walkingImage, context)
+{
+   if (player.timerForFirstImage < 5)
+   {
+      context.drawImage(defaultImage, player.x, player.y, player.w, player.h);
+      player.timerForFirstImage++;
+   }
+   else if (player.timerForSecondImage < 5)
+   {
+      context.drawImage(walkingImage, player.x, player.y, player.w, player.h);
+      player.timerForSecondImage++
+   }
+   else
+   {
+      context.drawImage(defaultImage, player.x, player.y, player.w, player.h);
+      player.timerForFirstImage = 0
+      player.timerForSecondImage = 0;
+   }
+}
 
-			if(this.lives == 0) {
-					enemy.x -= 30;
-					this.lives = 3;
-					gameStarted = false;
-					enemy.respawn();
-					WaitForStart();
-			}
-		}
-		drawLives(){
-			for(let i = 1; i <= this.lives; i++)
-				ctx.drawImage(heart,game.canvas_width - i*25,10,16,16);
-		}
+function mirrorImage(ctx, spriteImage, sourceX, sourceY, spriteWidth, spriteHeight)
+{
+   ctx.save();
+   ctx.translate(spriteWidth / 2, spriteHeight / 2 - 15);
+   ctx.scale(-1, 1)
+   ctx.drawImage(spriteImage, -sourceX, sourceY, spriteWidth, spriteHeight);
+   ctx.restore();
+}
 
-		powerender()
-		{
-			if (this.power!=null)
-			{
-				this.powerEnderCountdown--;
-				if(this.powerEnderCountdown==0)
-				{
-					this.power = null;
-					current_player_mode = null;
-				}
-			}
-		}
-	}
-	class Projectile {
-		constructor(x, y, w, h) 
-		{
-			this.x = x;
-			this.y = y;
-			this.w = w;
-			this.h = h;
-			this.ejected = false;
-			this.hitEnemy = false;
-			this.x_dir = 1;
-			this.y_dir = -1
-			this.acceleration = 7;
-			this.gravityForce = 8;
-			this.rotationSpeed=0;
-			this.className = 'Projectile';
-		}
-		draw() 
-		{
-			if(player.power == 'beast') {
-				this.x = this.x - player.w - 10;
-				this.acceleration = 3;
-			}
-			if(player.power == 'beast')
-				this.acceleration = 7 	// when player goes from beast to invulnerable, reset the accel of the projectile
+function animateFlipImage(defaultImage, walkingImage, ctx, spriteWidth, spriteHeight)
+{
+   if (player.timerForFirstImage < 5)
+   {
+      ctx.save();
+      ctx.translate(spriteWidth / 2, spriteHeight / 2 - 15);
+      ctx.scale(-1, 1);
+      ctx.drawImage(defaultImage, -player.x, player.y, player.w, player.h);
+      ctx.restore();
+      player.timerForFirstImage++;
+   }
+   else if (player.timerForSecondImage < 5)
+   {
+      ctx.save();
+      ctx.translate(spriteWidth / 2, spriteHeight / 2 - 15);
+      ctx.scale(-1, 1);
+      ctx.drawImage(walkingImage, -player.x, player.y, player.w, player.h);
+      ctx.restore();
+      player.timerForSecondImage++;
+   }
+   else
+   {
+      ctx.save();
+      ctx.translate(spriteWidth / 2, spriteHeight / 2 - 15);
+      ctx.scale(-1, 1);
+      ctx.drawImage(defaultImage, -player.x, player.y, player.w, player.h);
+      ctx.restore();
+      player.timerForFirstImage = 0;
+      player.timerForSecondImage = 0;
+   }
+}
 
-			if (!this.ejected)
-				ctx.drawImage(karambit, this.x, this.y, this.w, this.h);
+function EnemyProjectileOrder()
+{
+   enemyProjectile.hitplayer();
+   enemyProjectile.sticktoenemy();
+   enemyProjectile.decidetoshoot();
+   enemyProjectile.eject();
+   enemyProjectile.reset();
+   enemyProjectile.draw();
+}
 
-			else
-				{
-					rotateAndPaintImage(ctx,karambit,this.rotationSpeed,this.x,this.y,this.w/2,this.h/2,this.w,this.h)
-				    this.rotationSpeed+=0.3;
-				}
-		}
-		ascertainMovement()
-		{
-			if (!this.ejected) 
-			{
-				this.x_dir = 1;
-				this.y_dir = -1;
-				this.x = player.x+7; //ball stays on top of player
-				this.y = player.y+6;
-				return;
-			}
-			this.x += this.x_dir * this.acceleration;
-			this.y += this.y_dir * this.acceleration;
-		}
-		ascertainCollision()
-		{
-            if(this.x >= game.canvas_width)
-				this.x_dir *= -1;						// bounce off of right wall
+function rectCollision(o1, o2)
+{
+   if (o1 instanceof Player)
+   {
+      if (o1.x < o2.x && game.leftArr) return false;
+      if (o1.power === 'invulnerable') return false;
+   }
+   if (o2 instanceof Player)
+   {
+      if (o2.x < o1.x && game.leftArr) return false;
+      if (o2.power === 'invulnerable') return false;
+   }
+   let r1x = o1 instanceof PowerUp ? o1.x - o1.r : o1.x;
+   let r1y = o1 instanceof PowerUp ? o1.y - o1.r : o1.y;
+   let r1w = o1 instanceof PowerUp ? o1.r : o1.w;
+   let r1h = o1 instanceof PowerUp ? o1.r : o1.h;
+   let r2x = o2 instanceof PowerUp ? o2.x - o2.r : o2.x;
+   let r2y = o2 instanceof PowerUp ? o2.y - o2.r : o2.y;
+   let r2w = o2 instanceof PowerUp ? o2.r : o2.w;
+   let r2h = o2 instanceof PowerUp ? o2.r : o2.h;
+   if (r1x <= r2x + r2w && r1x + r1w >= r2x && r1y < r2y + r2h && r1y + r1h > r2y) return true;
+   return false;
+}
 
+function rotateAndPaintImage(context, image, angleInRad, positionX, positionY, axisX, axisY, width, height)
+{
+   context.translate(positionX, positionY);
+   context.rotate(angleInRad);
+   context.drawImage(image, -axisX, -axisY, width, height);
+   context.rotate(-angleInRad);
+   context.translate(-positionX, -positionY);
+}
 
-			if(this.x <= (player.power == 'beast' ? 300 : 400) && !game.boss_fight_permission){
-					this.y_dir = 0;						// apply gravity when it reaches a certain point
-					this.y += this.gravityForce;
-			}
+function HitPlayer1(decrement_lives_permission)
+{
+   if (decrement_lives_permission == 10)
+   {
+      player.lives--;
+      decrement_lives_permission--;
+   }
+   return decrement_lives_permission;
+}
 
-			if(this.y >= 460){
-				this.y_dir = -1;
-				this.x_dir = -1; 
-				this.x = -200;
-				this.ejected = false;				// dissapear when it touches the ground
-			}
+function HitPlayer2(decrement_lives_permission)
+{
+   if (decrement_lives_permission == 0) decrement_lives_permission = 10;
+   if (decrement_lives_permission != 10) decrement_lives_permission--;
+   return decrement_lives_permission;
+}
 
-			if(game.boss_fight_permission && this.x <= player.x - 100) {
-				this.y_dir = 0;
-				this.y += this.gravityForce
-			}
+function EnemyOrder()
+{
+   enemy.draw();
+   enemy.healthbar();
+   if (game.boss_fight_permission) enemy.boss();
+   enemy.fall();
+   enemy.move();
+   enemy.ascertainCollision();
+   enemy.randomlymove();
+}
 
-			if (rectCollision(this, randomTile)) // if hits a random tile
-			{
-				this.y_dir = -1;
-				this.x_dir = -1; 
-				this.ejected = false;
-				return;
-			}
+function ProjectileOrder()
+{
+   projectile.ascertainMovement();
+   projectile.ascertainCollision();
+   projectile.draw();
+}
 
-			if (rectCollision(this, enemy)) // if hits an enemy
-			{
-				if(this.ejected) 
-				{
-					enemy.negativeCollision = true;
-				this.y_dir=-1;		
-				return;
-				}			
-			}
-		}
-	}
-	class PowerUp {
-		constructor(){
-			this.x = 250;
-			this.y = 445;
-			this.r= 5;
-			this.type = null; 	// #1 invulnerable player, #2 player turns around(now facing straight left), can shoot straight, and kills
-			this.spawned = false;	//enemies with 1 shot a.k.a beast mode
-			this.className = 'PowerUp';
-		}
-		draw(){
-			if(this.spawned) {
-				if(this.type == 'invulnerable') {			// invulnerable player
-					ctx.beginPath();						// can't be touched by enemies, no collision whatsoever
-		      		ctx.arc(this.x, this.y, this.r, 0, 2 * Math.PI, false);
-		      		ctx.fillStyle = 'white';
-		      		ctx.stroke();
-		      		ctx.fill();
+function PlayerOrder()
+{
+   player.ascertainGravity();
+   player.jump();
+   player.move();
+   player.draw();
+   player.processLives();
+   player.powerender()
+}
 
-		      		this.move();
-	      		}
-	      		else if (this.type == 'beast')  {			// beast player
-	      			ctx.beginPath();						// player turns around, shoots straight and kills enemies with 1 shot
-		      		ctx.arc(this.x, this.y, this.r, 0, 2 * Math.PI, false);
-		      		ctx.fillStyle = 'black';
-		      		ctx.stroke();
-		      		ctx.fill();
+function GameFinishedScreen()
+{
+   var my_gradient = ctx.createLinearGradient(0, 0, canvas.width, 0);
+   my_gradient.addColorStop("0", " magenta");
+   my_gradient.addColorStop("0.5", "yellow");
+   my_gradient.addColorStop("1.0", "purple");
+   ctx.fillStyle = "red";
+   ctx.textAlign = "center";
+   ctx.fillText("Game finished!", canvas.width / 2, canvas.height / 2 - 100);
+   ctx.fillText("Press Enter to restart!", canvas.width / 2, canvas.height / 2);
+}
 
-		      		this.move();
-	      		}
-			}
-		}
-		move(){
-			if(this.y + this.r <= 470)			// fall on the ground	
-				this.y+=5;
-			if (game.leftArr && !randomTile.hitPlayer)	// move right
-      			this.x+= player.velocity;
-      		if(this.x >= game.canvas_width + this.r) {				// when the current power gets out of bounds, another one can be spawned 
-      			this.spawned = false; 
-      			this.x = -250;
-      		}
-		}
-		create_power(){
+function StartScreenText()
+{
+   ctx.fillStyle = "brown";
+   ctx.textAlign = "center";
+   ctx.font = "20px Impact";
+   ctx.fillText("Use arrow keys to move!", 105, 300);
+   ctx.fillText("Press Space to jump!", 400, 300);
+   ctx.fillText("Power ups:", 250, 350)
+   ctx.beginPath();
+   ctx.arc(130, 380, 5, 0, 2 * Math.PI, false);
+   ctx.fillStyle = 'white';
+   ctx.stroke();
+   ctx.fill();
+   ctx.fillStyle = "lightyellow";
+   ctx.fillText("- Player becomes Ethereal!", 250, 387)
+   ctx.beginPath();
+   ctx.arc(130, 410, 5, 0, 2 * Math.PI, false);
+   ctx.fillStyle = 'black';
+   ctx.stroke();
+   ctx.fill();
+   ctx.fillText("- Player gains Beast Mode!", 250, 417)
+   ctx.fillStyle = "brown";
+   ctx.fillText("Objective:", 250, 450)
+   ctx.fillStyle = "brown";
+   ctx.fillText("Destroy everything in your path!", 250, 480)
+}
 
-			if(!this.spawned) {
-				if (game.leftArr && !randomTile.hitPlayer) { 
-					let rng = Math.random();
-					if(rng <= 0.005) {					// chance to spawn a powerup
-						let rngType = Math.random();
-						if(rngType >= 0.7)
-							this.type = 'invulnerable'		//70 chance of getting the invulnerable powerup, 30 for beast mode
-						else 
-							this.type = 'beast';
+function WaitForStart()
+{
+   if (!gameFinished)
+   {
+      game.boss_fight_permission = false;
+      current_player_mode = null;
+      ctx.font = "35px Impact";
+      var my_gradient = ctx.createLinearGradient(0, 0, canvas.width, 0);
+      my_gradient.addColorStop("0", " magenta");
+      my_gradient.addColorStop("0.5", "yellow");
+      my_gradient.addColorStop("1.0", "purple");
+      ctx.fillStyle = my_gradient;
+      ctx.textAlign = "center";
+      ctx.fillText("„Бак“", canvas.width / 2, canvas.height / 2 - 100);
+      my_gradient = ctx.createLinearGradient(0, 0, 320, 0);
+      ctx.fillStyle = "red";
+      ctx.textAlign = "center";
+      if (flashingTextTimer < 30)
+      {
+         ctx.fillText("PRESS ENTER TO START!", canvas.width / 2, canvas.height / 2);
+         flashingTextTimer++;
+      }
+      else if (flashingTextTimer2 > 0)
+      {
+         my_gradient.addColorStop("0", " magenta");
+         my_gradient.addColorStop("0.5", "orange");
+         my_gradient.addColorStop("1.0", "blue");
+         ctx.fillStyle = "lightyellow";
+         ctx.fillText("PRESS ENTER TO START!", canvas.width / 2, canvas.height / 2);
+         flashingTextTimer2--;
+      }
+      else
+      {
+         ctx.fillStyle = "red";
+         ctx.fillText("PRESS ENTER TO START!", canvas.width / 2, canvas.height / 2);
+         flashingTextTimer = 0;
+         flashingTextTimer2 = 30;
+      }
+      StartScreenText()
+      DeclareGameParameters();
+   }
+   else GameFinishedScreen();
+}
+powerup = new PowerUp();
 
-						this.spawned = true;
-					}
-				}
-			} else 
-				this.draw();
-		}
-		check_collision()
-		{
-			if(this.spawned && rectCollision(this, player))
-			{
-					player.powerEnderCountdown=300;
-					player.power = this.type;
-					current_player_mode = this.type; 	// global variable (needed to change background)
-					this.spawned = false; 				// power dissapears, player gains the power
-					this.x = -250;
-			}
-		}
-	}
-	class RandomTile {
-		constructor(w, tile) 
-		{
-			this.x = -100;
-			this.w = w;
-			this.h = 40; // random object height
-			this.y = 445 - (30 * (this.h / 30 - 1)); //makes sure object is always above ground
-			this.tile = tile;
-			this.random = 0;
-			this.hitPlayer = false;
-			this.className = 'RandomTile';	
-		}
-
-		appearnow() 
-		{
-			ctx.drawImage(this.tile, this.x, this.y, this.w, this.h);
-
-			if (game.leftArr && !this.hitPlayer) this.x += player.velocity;
-
-			if (this.x > 600) this.disappear();
-
-			if (rectCollision(this, player)) this.hitPlayer = true;
-			else this.hitPlayer = false;
-
-			/*if (Math.abs(this.x - player.x) == this.w && player.x > this.x && player.power != 'invulnerable') //when player and object collide on x axis
-			{
-				if (player.y + player.h / 2 > (this.y - this.h / 2)) this.hitPlayer = true; // if player isnt in the air over the obstacle
-				else this.hitPlayer = false;
-				return;
-			}*/
-		}
-		playerOnTop() 
-		{
-			if (Math.abs(this.y - player.y) == 30 && Math.abs(this.x - player.x) < this.w &&player.x > this.x-20 && player.power != 'invulnerable')
-				player.playerWasOnTop = true;
-			else if (player.playerWasOnTop) 
-			{
-				player.playerWasOnTop = false;
-				if (!game.upArrow) 
-				{
-					game.upArrow = false;
-					player.verticalCollision = false;
-				}
-			}
-		}
-		disappear()
-		{
-			this.appear = false; //appearn() will stop being called
-			this.w=20 * Math.floor((Math.random()*5)+1) //must be bigger than 20 and divisible by 20
-			this.x = -100; // reset at original position on the left
-			this.h = 10+10*Math.floor((Math.random()*5)+1); //new object height //must at least 20 and divisible by 10
-			this.y = 445 - (30 * (this.h / 30 - 1)); //adjust y to new height
-		}
-	}
-	class Cloud {
-		constructor(x,y){
-			this.cloudX = -300
-			this.cloudY = Math.random() * (200 - 50) + 50
-		}
-		draw(){
-	            ctx.beginPath();
-	            ctx.moveTo(this.cloudX, this.cloudY);
-	            ctx.bezierCurveTo(this.cloudX - 40, this.cloudY + 20, this.cloudX - 40, this.cloudY + 70, this.cloudX + 60, this.cloudY + 70);
-	            ctx.bezierCurveTo(this.cloudX + 80, this.cloudY + 100, this.cloudX + 150, this.cloudY + 100, this.cloudX + 170, this.cloudY + 70);
-	            ctx.bezierCurveTo(this.cloudX + 250, this.cloudY + 70, this.cloudX + 250, this.cloudY + 40, this.cloudtX + 220, this.cloudY + 20);
-	            ctx.bezierCurveTo(this.cloudX + 260, this.cloudY - 40, this.cloudX + 200, this.cloudY - 50, this.cloudX + 170, this.cloudY - 30);
-	            ctx.bezierCurveTo(this.cloudX + 150, this.cloudY - 75, this.cloudX + 80, this.cloudY - 60, this.cloudX + 80, this.cloudY - 30);
-	            ctx.bezierCurveTo(this.cloudX + 30, this.cloudY - 75, this.cloudX - 20, this.cloudY - 60, this.cloudX, this.cloudY);
-	            ctx.closePath();
-
-	            var grdCenterX = 260;
-	            var grdCenterY = 80;
-	            var grd = ctx.createRadialGradient(grdCenterX, grdCenterY, 10, grdCenterX, grdCenterY, 200);
-	            grd.addColorStop(0, "#F9F2F2"); // light blue
-	            grd.addColorStop(1, "#C7B9B9"); // dark blue
-	            ctx.fillStyle = grd;
-	            ctx.fill();
-
-
-            if (game.leftArr && !randomTile.hitPlayer) //now stops moving when playa is hit by obstacle
-            	this.cloudX += player.velocity;
-
-            if(this.cloudX >= 700)
-            	this.cloudX = -300;
-            
-		}
-	}
-	cloud = new Cloud();
-	class Enemy {
-		constructor() 
-		{
-			this.w = player.w * 2;
-			this.h = player.h * 1.5;
-			this.x = -250;
-			this.y = game.canvas_height - game.primitive_tile_height - this.h - 5;
-			this.maxLives=2;
-			this.currentLives = this.maxLives;
-			this.verticalCollision = false;
-			this.negativeCollision = false;
-			this.className = 'Enemy';
-			this.decrement_lives_permission = 10; //fie
-			//random movement
-			this.randomXdir = -1;
-			this.randomMovement=0;
-			this.moving = false;
-			this.randomMovementCountdown = 10;
-			this.type = 'normal';
-			this.consecutive_kills = 0;
-			this.hitTile=  false;
-		}
-		draw(){
-
-			if(enemy.currentLives != 0) 
-				if (enemy.type === 'boss') 
-					ctx.drawImage(bossImage, this.x, this.y - this.h, this.w * 2, this.h * 2);
-				else
-					ctx.drawImage(enemyImage, this.x, this.y, this.w, this.h);
-			
-		}
-		fall(){
-			if (!this.verticalCollision && !player.playerOnTop) 
-				this.y += 5;			//gravity pull
-			if (this.y >= 445 + (30 - this.h)) 
-				this.verticalCollision = true;
-			else 
-				this.verticalCollision = false;
-		}
-		boss(){
-			// boss() is being called only when the enemy is a boss
-
-			this.maxLives = 2; 						
-			if(rectCollision(this,player)) 	player.lives = 0	// player is dead if the boss touches him
-
-			if(this.currentLives == 0)	{	//boss dead 
-				game.boss_fight_permission = false;
-				player.currentScore += 100;
-				player.lives++;
-				player.x = 450;
-				current_player_mode = null;
-				this.type = 'normal';
-				this.respawn();
-				return;
-			}
-		}
-		move(){
-			if(this.type == 'boss') {
-				if(this.x <= 100)
-					this.x += 5;
-			}
-			if (game.leftArr && !randomTile.hitPlayer && !game.boss_fight_permission)
-				this.x += player.velocity;
-		}
-		ascertainCollision(){
-			if (this.x > 500)
-			{
-				this.respawn();
-				return;
-			}
-			
-			if (this.negativeCollision && projectile.ejected) // projectile collision
-			{
-				projectile.ejected = false;
-				this.negativeCollision = false;
-				this.currentLives--;
-				if (this.currentLives < 1 && this.type != 'boss')		//enemy dead
-					this.dead();
-
-				ImpactX(enemy, 15);
-				return;
-			}
-
-			if (rectCollision(this, randomTile)) // random tile collision
-			{
-				if (intervalOngoing) this.dead();
-				clearInterval(ImpactXInterval);
-				intervalOngoing = false;
-				return;
-			} 
-
-			if (Math.abs(this.x - player.x) < (this.w > player.w ? this.w : player.w) && this.y == player.y + player.h && player.power != 'invulnerable' && this.type != 'boss') // player Y collision causes a bounce
-			{
-				player.jumpHeight = 180;
-				player.verticalCollision = true;
-				game.upArrow = true;
-				player.stopAscend=false;
-				player.hangTime=5; 
-				this.dead();
-
-				return;
-			}
-			if (rectCollision(this, player) && player.power != 'invulnerable') // player X collision
-			{
-				ImpactX(randomTile, 15, true);
-				ImpactX(enemy, 15, true);
-				ImpactX(tiles, 15, true);
-				ImpactX(cloud, 15, true);
-				ImpactX(powerup, 15, true);
-				this.decrement_lives_permission = HitPlayer1(this.decrement_lives_permission);
-				
-				return;
-			}
-
-			this.decrement_lives_permission= HitPlayer2(this.decrement_lives_permission);
-		}
-		respawn(){
-			this.x = -250;
-			this.x = rectCollision(this, randomTile) ? this.x - randomTile.w - this.w : this.x;
-			this.y = game.canvas_height - this.h - game.primitive_tile_height;
-			this.currentLives = this.maxLives;
-		}
-		healthbar(){
-			if(this.currentLives != 0){
-				ctx.fillStyle = 'gray';
-				ctx.fillRect(this.x, enemy.type === 'boss' ? this.y - this.h - this.w / 2 : this.y - this.w / 2, enemy.type === 'boss' ? this.w * 1.50: this.w - this.w / 6, 5);
-
-				if (this.currentLives == 1)
-					ctx.fillStyle = 'red';
-				else 
-					ctx.fillStyle = 'green';
-
-				ctx.fillRect(this.x, enemy.type === 'boss' ? this.y - this.h - this.w / 2 : this.y - this.w / 2, enemy.type === 'boss' ? this.w * 1.50 * ((this.currentLives*100/this.maxLives)/100) : (this.w - this.w / 6) * ((this.currentLives*100/this.maxLives)/100), 5);
-			}	
-		}
-		randomlymove(){
-			if(!game.boss_fight_permission) { 
-                if (Math.abs(this.x - randomTile.x)>10) // if far from tile (10 units)
-				{
-					this.hitTile = false;
-				}
-				this.randomMovement = Math.random()*50+1; //decide when to move (when random value is >48.9)
-				if (this.randomMovement>48.9)
-				{
-					this.moving=true;
-					this.randomMovementCountdown=10;
-				}
-
-				if (Math.abs(this.x - randomTile.x) <= (this.w > randomTile.w ? this.w : randomTile.w)) //collsiion with tile
-				{
-					this.hitTile=true;
-					this.randomXdir *=-1
-					this.x += 7*this.randomXdir;
-				}
-				
-				else if(this.moving && this.randomMovementCountdown > 0)  // move when conditions are met
-				{
-					this.x += 3*this.randomXdir;
-					this.randomMovementCountdown--;
-				}
-				else //when stopping movement
-				{
-					this.moving=false;  
-					this.randomMovementCountdown=50;
-					if (!this.hitTile)
-					this.randomXdir *= -1;
-				}
-			}
-		}
-		dead(){
-				enemyProjectile.ejected = false;
-				enemyProjectile.toShootOrNotToShoot = 100;
-				enemy.currentLives = 0;
-				this.consecutive_kills++;
-				if(this.consecutive_kills == 5){
-					player.lives++;
-					this.consecutive_kills = 0;
-				}
-				player.currentScore += 50;
-
-				this.respawn();
-		}
-	}
-	class Aim {
-		constructor(){
-			this.x=player.x - 205;
-			this.y=470;
-			this.w=20;
-			this.h=5;
-		}
-		draw(){
-			ctx.fillStyle = 'red'
-			ctx.globalAlpha = 0.5;	
-		    ctx.fillRect(this.x,this.y,this.w,this.h);
-		    ctx.globalAlpha = 1.0;
-		}
-		move(){
-			if(game.boss_fight_permission) this.x = player.x - (500-player.x)*2 - 190 - (450 - player.y); 	//boss fight
-			else this.x = player.x-(205+(450-player.y));	// normal
-			if(player.power == 'beast') this.x = player.x-(325 + (450 - player.y)*2) // beast
-		}
-	}
-	class EnemyProjectile{
-		constructor()
-		{
-			this.x = enemy.x + enemy.w / 1.5;
-			this.y = enemy.y + enemy.h / 1.5;
-			this.w= 15;
-			this.h= 10;
-			this.ejected=false;
-			this.toShootOrNotToShoot=100;
-			this.decrement_lives_permission=10;
-			this.className = 'E_Projectile';
-		}
-		draw()
-		{	
-			if(enemy.currentLives != 0 && this.ejected)
-				ctx.drawImage(enemyProjectileImage, this.x, this.y, this.w, this.h);
-		}
-		sticktoenemy()
-		{
-			if(!this.ejected)
-			{
-				this.x = enemy.x + enemy.w / 1.5;
-				this.y = enemy.type === 'boss' ? enemy.y + enemy.h / 2.40 : enemy.y + enemy.h / 1.5;
-			}
-			
-		}
-		decidetoshoot()
-		{
-			if(!this.ejected)
-			{
-				this.toShootOrNotToShoot -= 1;
-			    if (this.toShootOrNotToShoot < 1)
-			        this.ejected=true;
-			}
-		}
-		eject()
-		{
-			if (this.ejected)
-			{
-				if(enemy.type=='boss') this.x+=7
-				else this.x +=3;
-
-				if (game.leftArr && !randomTile.hitPlayer)
-				{
-					this.x+=5;
-				}
-			}
-		}
-		reset()
-		{
-			if (this.x > canvas.width +50)
-			{
-				this.ejected=false;
-				this.toShootOrNotToShoot=100;
-			}
-			//this.x + this.w > randomTile.x && this.y + this.h > randomTile.y
-			if (rectCollision(this, randomTile)) 
-			{
-				this.ejected = false;
-				this.toShootOrNotToShoot = 100;
-			}
-		}
-		hitplayer()
-		{
-			if (this.ejected)
-	     	{
-				 // (Math.abs(this.x - player.x) < (this.w > player.w ? this.w : player.w) && this.y < player.y + player.h)
-		 		if (rectCollision(this, player) && player.power != 'invulnerable')
-		    	{
-					this.decrement_lives_permission=HitPlayer1(this.decrement_lives_permission);
-					this.ejected=false;
-					this.toShootOrNotToShoot=100;
-			    }
-			    this.decrement_lives_permission=HitPlayer2(this.decrement_lives_permission);
-		   	}
-			   
-		}
-	}
-	game = new Game(500, 500);
-	function DeclareGameParameters(){
-		
-	    randomTile = new RandomTile(100, baseTile);
-	    player = new Player();
-	    enemy = new Enemy();
-     	projectile = new Projectile(10, 10, 20, 20);
-	    enemyProjectile = new EnemyProjectile();
-	    aim = new Aim();
-	}
-    function ScoreText(){
-		ctx.font = "35px Impact";
-		ctx.fillStyle = gradient;
-		ctx.textAlign = "left";
-		ctx.fillText("Score: " + player.currentScore, 7, 35);
-		if(player.currentScore == 1000)
-		{
-			gameStarted=false;
-			gameFinished=true;
-		} 
-	}
-	function eventHandler() 	{
-		window.addEventListener('keydown', function(event) 
-		{
-			if (!gameStarted && gameFinished)
-			{
-				if (event.keyCode == 13) // start game when pressing enter
-				gameFinished=false;
-			}
-			else if (!gameStarted)
-			{
-				if (event.keyCode == 13) // start game when pressing enter
-				    gameStarted = true;
-			}
-			else
-			{
-				if (event.keyCode == 38) // up
-					game.upArrow = true;
-				if (event.keyCode == 32) // space
-					projectile.ejected = true;
-				if (event.keyCode == 37) // left
-					game.leftArr = true;
-				if (event.keyCode == 39) // right
-					game.rightArr = true;
-			}
-		}, false);
-		window.addEventListener('keyup', function(event) 
-		{
-			if (event.keyCode == 37) // left
-				game.leftArr = false
-			if (event.keyCode == 39) // right
-					game.rightArr = false;
-
-		}, false);
-	}
-	function ImpactX(entity, repetitions, reverse = false) {
-		if (intervalOngoing) return;
-		intervalOngoing = true;
-		let x = 0;
-		ImpactXInterval = window.setInterval(function () 
-		{
-			if (reverse) 
-			{
-				game.upArrow = true;
-				player.velocity = -10;
-			}
-			else 
-			{
-				entity.x -= 10;
-			}
-
-			if (++x === repetitions) 
-			{
-				if (reverse) player.velocity = 5;
-				intervalOngoing = false;
-				window.clearInterval(ImpactXInterval);
-			}
-		}, 16.6666666667);
-	}
-	function animatePlayer( defaultImage, walkingImage, context) {
-	  if(player.timerForFirstImage<5) {  //crta prvata slika 5 ciklusi
-	    context.drawImage(defaultImage,player.x,player.y,player.w,player.h);
-		player.timerForFirstImage++;
-	  }
-	  else if(player.timerForSecondImage<5) { //crta vtorata slika 5 ciklusi
-	    context.drawImage(walkingImage,player.x,player.y,player.w,player.h);
-		player.timerForSecondImage++
-	  }
-	  else { //resetira, so sho ke pocni da ja crta prvata slika povtorno
-		context.drawImage(defaultImage,player.x,player.y,player.w,player.h);
-		player.timerForFirstImage=0
-		player.timerForSecondImage=0;
-	  }		
-	}
-	function mirrorImage(ctx, spriteImage, sourceX, sourceY, spriteWidth, spriteHeight){
-		ctx.save();
-		ctx.translate(spriteWidth/2, spriteHeight/2-15);
-	    ctx.scale(-1,1)
-	    ctx.drawImage(spriteImage, -sourceX, sourceY, spriteWidth, spriteHeight);
-	    ctx.restore();
-	}
-	function animateFlipImage(defaultImage, walkingImage, ctx, spriteWidth, spriteHeight) 
-	{
-		if (player.timerForFirstImage<5) 
-		{
-			ctx.save();
-			ctx.translate(spriteWidth/2, spriteHeight/2-15);
-			ctx.scale(-1, 1);
-			ctx.drawImage(defaultImage, -player.x,player.y,player.w,player.h);
-			ctx.restore();
-			player.timerForFirstImage++;
-	  	}
-	  	else if (player.timerForSecondImage<5) 
-	  	{ 
-			ctx.save();
-			ctx.translate(spriteWidth/2, spriteHeight/2-15);
-			ctx.scale(-1, 1);
-			ctx.drawImage(walkingImage, -player.x,player.y,player.w,player.h);
-			ctx.restore();
-			player.timerForSecondImage++;
-	  	}
-	  	else 
-	  	{ 
-			ctx.save();
-			ctx.translate(spriteWidth/2, spriteHeight/2-15);
-			ctx.scale(-1, 1);
-			ctx.drawImage(defaultImage, -player.x,player.y,player.w,player.h);
-			ctx.restore();
-			player.timerForFirstImage=0;
-			player.timerForSecondImage=0;
-		}	
-	}
-
-	function EnemyProjectileOrder(){
-		enemyProjectile.hitplayer();
-		enemyProjectile.sticktoenemy();
-		enemyProjectile.decidetoshoot();
-		enemyProjectile.eject();
-		enemyProjectile.reset();
-		enemyProjectile.draw();
-	}
-	function rectCollision(o1, o2) {
-		if (o1 instanceof Player)
-		{
-			if (o1.x < o2.x && game.leftArr) 
-				return false;
-			if (o1.power === 'invulnerable')
-				return false;
-		}
-
-		if (o2 instanceof Player)
-		{
-			if (o2.x < o1.x && game.leftArr) 
-				return false;
-			if (o2.power === 'invulnerable')
-				return false;
-		}
-
-
-		let r1x = o1 instanceof PowerUp ? o1.x - o1.r : o1.x;
-		let r1y = o1 instanceof PowerUp ? o1.y - o1.r : o1.y;
-		let r1w = o1 instanceof PowerUp ? o1.r : o1.w;
-		let r1h = o1 instanceof PowerUp ? o1.r : o1.h;
-		let r2x = o2 instanceof PowerUp ? o2.x - o2.r : o2.x;
-		let r2y = o2 instanceof PowerUp ? o2.y - o2.r : o2.y;
-		let r2w = o2 instanceof PowerUp ? o2.r : o2.w;
-		let r2h = o2 instanceof PowerUp ? o2.r : o2.h;
-
-		if (r1x <= r2x + r2w && r1x + r1w >= r2x && r1y < r2y + r2h && r1y + r1h > r2y)
-			return true;
-
-		return false;
-	}
-	function rotateAndPaintImage ( context, image, angleInRad , positionX, positionY, axisX, axisY, width, height ) {
-        context.translate( positionX, positionY );
-        context.rotate( angleInRad );
-        context.drawImage( image, -axisX, -axisY, width, height );
-        context.rotate( -angleInRad );
-        context.translate( -positionX, -positionY );
-	}
-	function HitPlayer1(decrement_lives_permission){
-		if(decrement_lives_permission == 10) {
-					player.lives --;		
-					decrement_lives_permission--;
-				}
-		return decrement_lives_permission;
-	}
-	function HitPlayer2(decrement_lives_permission){
-		if(decrement_lives_permission == 0)
-				decrement_lives_permission = 10;					//fixes the bug that took 2 lives instead of 1
-			if(decrement_lives_permission != 10)
-				decrement_lives_permission--;
-		return decrement_lives_permission;
-	}
-	function EnemyOrder() {
-		enemy.draw();
-		enemy.healthbar();
-		if(game.boss_fight_permission) enemy.boss();
-		enemy.fall();
-		enemy.move();
-		enemy.ascertainCollision();
-		enemy.randomlymove();
-	}
-	function ProjectileOrder() {
-		projectile.ascertainMovement();
-		projectile.ascertainCollision();
-		projectile.draw();
-	}
-	function PlayerOrder() {
-		player.ascertainGravity();
-		player.jump();
-		player.move();
-		player.draw();
-		player.processLives();
-		player.powerender()
-	}
-	function GameFinishedScreen(){
-		var my_gradient = ctx.createLinearGradient(0, 0, canvas.width, 0);
-		my_gradient.addColorStop("0"," magenta");
-		my_gradient.addColorStop("0.5", "yellow");
-		my_gradient.addColorStop("1.0", "purple");
-		ctx.fillStyle = "red";
-		ctx.textAlign = "center";
-        ctx.fillText("Game finished!", canvas.width/2, canvas.height/2-100); 
-		ctx.fillText("Press Enter to restart!", canvas.width/2, canvas.height/2); 
-	}
-	function StartScreenText(){
-		ctx.fillStyle = "brown";
-		ctx.textAlign = "center";
-		ctx.font = "20px Impact";
-		ctx.fillText("Use arrow keys to move!", 105,300);
-		ctx.fillText("Press Space to jump!",400,300);
-		ctx.fillText("Power ups:",250,350)
-        //draw white power info
-		ctx.beginPath();						// can't be touched by enemies, no collision whatsoever
-      	ctx.arc(130, 380, 5, 0, 2 * Math.PI, false);
- 		ctx.fillStyle = 'white';
-  		ctx.stroke();
- 		ctx.fill();		
-		ctx.fillStyle = "lightyellow";
-		ctx.fillText("- Player becomes Ethereal!",250,387)
-		//draw black power info
-		ctx.beginPath();						// can't be touched by enemies, no collision whatsoever
-      	ctx.arc(130, 410, 5, 0, 2 * Math.PI, false);
- 		ctx.fillStyle = 'black';
-  		ctx.stroke();
- 		ctx.fill();
-		ctx.fillText("- Player gains Beast Mode!",250,417)		
-		//game info
-		ctx.fillStyle="brown";
-		ctx.fillText("Objective:", 250,450)
-		ctx.fillStyle="brown";
-		ctx.fillText("Destroy everything in your path!", 250,480)
-	}
-	function WaitForStart(){
-		if(!gameFinished)
-		{
-			game.boss_fight_permission = false;
-			current_player_mode = null;
-			ctx.font = "35px Impact";
-			//ime na gejm text
-	        var my_gradient = ctx.createLinearGradient(0, 0, canvas.width, 0);
-			my_gradient.addColorStop("0"," magenta");
-			my_gradient.addColorStop("0.5", "yellow");
-			my_gradient.addColorStop("1.0", "purple");
-			ctx.fillStyle = my_gradient;
-			ctx.textAlign = "center";
-	        ctx.fillText("„Бак“", canvas.width/2, canvas.height/2-100); 
-			//start game text
-			my_gradient = ctx.createLinearGradient(0, 0, 320, 0);
-			ctx.fillStyle = "red";
-	        ctx.textAlign = "center";
-			if (flashingTextTimer < 30) //edna boja 30 ciklusi
-			{
-				ctx.fillText("PRESS ENTER TO START!", canvas.width/2, canvas.height/2); 
-				flashingTextTimer++;
-			}
-	        else if (flashingTextTimer2 > 0) //druga boja 30 ciklusi
-			{
-				my_gradient.addColorStop("0"," magenta");
-			    my_gradient.addColorStop("0.5", "orange");
-			    my_gradient.addColorStop("1.0", "blue");
-				ctx.fillStyle = "lightyellow";
-				ctx.fillText("PRESS ENTER TO START!", canvas.width/2, canvas.height/2); 
-				flashingTextTimer2--;
-	        }
-			else 
-			{
-				ctx.fillStyle = "red";
-				ctx.fillText("PRESS ENTER TO START!", canvas.width/2, canvas.height/2); 
-				flashingTextTimer=0;
-				flashingTextTimer2=30;
-			}
-			StartScreenText() // pokazi startscreen
-			//crta player ikona pod tekstot
-			//ctx.drawImage(characterSpriteDefault,250,350,20,20);
-			DeclareGameParameters();
-		}
-		else GameFinishedScreen();	
-	}
-	powerup = new PowerUp();
-	function recurring() {
-		game.drawCanvas();
-
-		if(!gameStarted)
-			WaitForStart();
-		else
-		{
-			game.checkScore();
-			game.drawTiles();
-			aim.draw();
-			aim.move();
-			if(!game.boss_fight_permission) {
-				powerup.create_power();
-				powerup.check_collision();
-				cloud.draw();
-				randomTile.appearnow();
-			}
-			EnemyProjectileOrder();
-			EnemyOrder();
-			PlayerOrder();
-			ProjectileOrder();
-			ScoreText();
-			randomTile.playerOnTop();
-		}
-	}
-
-	setInterval(recurring, 16.6666666667);
-	eventHandler();
-	</script>
+function recurring()
+{
+   game.drawCanvas();
+   if (!gameStarted) WaitForStart();
+   else
+   {
+      game.checkScore();
+      game.drawTiles();
+      aim.draw();
+      aim.move();
+      if (!game.boss_fight_permission)
+      {
+         powerup.create_power();
+         powerup.check_collision();
+         cloud.draw();
+         randomTile.appearnow();
+      }
+      EnemyProjectileOrder();
+      EnemyOrder();
+      PlayerOrder();
+      ProjectileOrder();
+      ScoreText();
+      randomTile.playerOnTop();
+   }
+}
+setInterval(recurring, 16.6666666667);
+eventHandler();
+</script>
 </html>
