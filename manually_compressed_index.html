@@ -112,8 +112,8 @@ class Game
       {
          randomTile.x = 600;
          this.boss_fight_permission = true;
-         enemy.maxLives = 5;
-         enemy.currentLives = 5;
+         enemy.maxLives = 6;
+         enemy.currentLives = 6;
          enemy.type = 'boss';
          player.power = null;
       }
@@ -239,6 +239,7 @@ class Player
          if (this.powerEnderCountdown == 0)
          {
             this.power = null;
+            if (rectCollision(this, randomTile)) game.upArrow = true;
             current_player_mode = null;
          }
       }
@@ -332,7 +333,7 @@ class PowerUp
 {
    constructor()
    {
-      this.x = -300;
+      this.x = -250;
       this.y = 465;
       this.r = 5;
       this.type = null;
@@ -378,13 +379,11 @@ class PowerUp
       {
          if (game.leftArr && !randomTile.hitPlayer)
          {
-            let rng = Math.random();
-            if (rng <= 0.005)
+            if (Math.random() < 0.5)
             {
-               this.x = randomTile < 0 ? randomTile.x - this.r * 2 : -300;
-               let rngType = Math.random();
-               if (rngType >= 0.7) this.type = 'invulnerable'
-               else this.type = 'beast';
+               this.x = -250;
+               this.x = rectCollision(this, randomTile) ? randomTile.x - randomTile.w : this.x;
+               this.type = Math.random() < 0.5 ? 'invulnerable' : 'beast';
                this.spawned = true;
             }
          }
@@ -440,7 +439,7 @@ class RandomTile
    {
       this.appear = false;
       this.w = 20 * Math.floor((Math.random() * 5) + 1)
-      this.x = enemy.x < 0 ? enemy.x - this.w * 4 : -this.w;
+      this.x = enemy.x < 0 ? enemy.x + this.w : -200;
       this.h = 10 + 10 * Math.floor((Math.random() * 5) + 1);
       this.y = 445 - (30 * (this.h / 30 - 1)); //adjust y to new height
    }
@@ -482,7 +481,7 @@ class Enemy
       this.h = 30 * 1.5;
       this.x = -250;
       this.y = 500 - 25 - this.h - 5;
-      this.maxLives = 2;
+      this.maxLives = 4;
       this.currentLives = this.maxLives;
       this.verticalCollision = false;
       this.negativeCollision = false;
@@ -528,7 +527,7 @@ class Enemy
          if (player.lives < 3) player.lives++;
          player.x = 450;
          current_player_mode = null;
-         this.maxLives = 2;
+         this.maxLives = 4;
          this.type = 'normal';
          this.dead();
          return;
@@ -545,12 +544,6 @@ class Enemy
       if (this.x > 500)
       {
          this.respawn();
-         return;
-      }
-      if (rectCollision(this, randomTile))
-      {
-         clearInterval(ImpactXInterval);
-         intervalOngoing = false;
          return;
       }
       if (Math.abs(this.x - player.x) < (this.w > 20 ? this.w : 20) && this.y == player.y + 30 && player.power != 'invulnerable' && this.type != 'boss')
@@ -577,9 +570,10 @@ class Enemy
    respawn()
    {
       this.currentLives = this.maxLives;
-      this.x = enemy.type === 'boss' ? -this.w * 4 : randomTile.x < 0 ? randomTile.x - this.w * 4 : -this.w;
+      this.x = -300;
+      this.x = rectCollision(this, randomTile) ? randomTile.x - randomTile.w - this.w : this.x;
       this.y = 500 - this.h - 25;
-      this.maxLives = this.type != 'boss' ? 2 : 5;
+      this.maxLives = this.type != 'boss' ? 4 : 6;
    }
    healthbar()
    {
@@ -596,21 +590,23 @@ class Enemy
    {
       if (!game.boss_fight_permission)
       {
-         if (this.appeased && this.appeasedAmount < 30)
+         if (this.appeased && this.appeasedAmount < 40)
          {
             if (rectCollision(this, randomTile))
             {
+               if (intervalOngoing) intervalOngoing = false;
                this.direction *= -1;
-               while (rectCollision(this, randomTile))
-                  this.x += 2.5 * this.direction;
                this.appeasedAmount = 0;
-            } 
-            this.x += 2.5 * this.direction;
+               while (rectCollision(this, randomTile))
+                  this.x += 2 * this.direction;
+               return;
+            }
+            this.x += 2 * this.direction;
             this.appeasedAmount++;
          }
          else
          {
-            this.direction = Math.random() > 0.35 ? this.direction : this.direction * -1;
+            this.direction = Math.random() < 0.50 ? -1 : 1;
             this.appeased = Math.random() < 0.075 ? true : false;
             this.appeasedAmount = 0;
          }
@@ -764,7 +760,7 @@ function eventHandler()
       else
       {
          if (event.keyCode == 38) game.upArrow = true;
-         if (event.keyCode == 32) projectile.ejected = true;
+         if (event.keyCode == 32 && player.power !== 'invulnerable') projectile.ejected = true;
          if (event.keyCode == 37) game.leftArr = true;
          if (event.keyCode == 39) game.rightArr = true;
       }
@@ -790,7 +786,7 @@ function ImpactX(entity, repetitions, reverse = false)
       }
       else
       {
-         entity.x -= 10;
+         entity.x -= 8;
       }
       if (++x === repetitions)
       {
