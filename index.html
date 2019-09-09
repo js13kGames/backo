@@ -71,7 +71,6 @@ class Game
       this.canvas_height = canvas_height;
       this.primitive_tile_width = 25;
       this.primitive_tile_height = 25;
-      this.className = 'Game';
       this.boss_fight_permission = false;
    }
    drawCanvas()
@@ -134,7 +133,6 @@ class Player
 {
    constructor()
    {
-      this.health = 100;
       this.w = 20;
       this.h = 30;
       this.x = 450;
@@ -146,7 +144,6 @@ class Player
       this.jumpHeight = 90;
       this.velocity = 5;
       this.gravityForce = 5;
-      this.className = 'Player';
       this.enemyBounce = false;
       this.playerWasOnTop = false;
       this.lives = 3;
@@ -268,7 +265,6 @@ class Projectile
       this.acceleration = 7;
       this.gravityForce = 8;
       this.rotationSpeed = 0;
-      this.className = 'Projectile';
    }
    draw()
    {
@@ -347,7 +343,6 @@ class PowerUp
       this.r = 5;
       this.type = null;
       this.spawned = false;
-      this.className = 'PowerUp';
    }
    draw()
    {
@@ -425,7 +420,6 @@ class RandomTile
       this.tile = tile;
       this.random = 0;
       this.hitPlayer = false;
-      this.className = 'RandomTile';
    }
    appearnow()
    {
@@ -499,7 +493,6 @@ class Enemy
       this.currentLives = this.maxLives;
       this.verticalCollision = false;
       this.negativeCollision = false;
-      this.className = 'Enemy';
       this.decrement_lives_permission = 10;
       this.moving = false;
       this.type = 'normal';
@@ -553,9 +546,7 @@ class Enemy
    move()
    {
       if (this.type == 'boss')
-      {
          if (this.x <= 100) this.x += 5;
-      }
       if (game.leftArr && !randomTile.hitPlayer && !game.boss_fight_permission) this.x += player.velocity;
    }
    ascertainCollision()
@@ -596,6 +587,7 @@ class Enemy
    }
    respawn()
    {
+      this.currentLives = this.maxLives;
       this.x = randomTile.x < 0 ? randomTile.x - this.w * 2 : -200;
       this.x = rectCollision(this, randomTile) ? this.x - randomTile.w - this.w : this.x;
       this.y = game.canvas_height - this.h - game.primitive_tile_height;
@@ -679,7 +671,6 @@ class EnemyProjectile
       this.ejected = false;
       this.toShootOrNotToShoot = 100;
       this.decrement_lives_permission = 10;
-      this.className = 'E_Projectile';
    }
    draw()
    {
@@ -1018,7 +1009,7 @@ function WaitForStart()
       my_gradient.addColorStop("1.0", "purple");
       ctx.fillStyle = my_gradient;
       ctx.textAlign = "center";
-      ctx.fillText("„Бак“", canvas.width / 2, canvas.height / 2 - 100);
+      ctx.fillText("Backo", canvas.width / 2, canvas.height / 2 - 100);
       my_gradient = ctx.createLinearGradient(0, 0, 320, 0);
       ctx.fillStyle = "red";
       ctx.textAlign = "center";
