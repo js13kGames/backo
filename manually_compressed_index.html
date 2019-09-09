@@ -37,6 +37,8 @@ bossImage.src = "assets/6.png"
 enemyProjectileImage.src = "assets/2.png"
 var ImpactXInterval;
 var intervalOngoing = false;
+var scoreAddedCounter = 100;
+var scoreAdded = false;
 class Tile
 {
    constructor(x, y)
@@ -495,6 +497,7 @@ class Enemy
       this.appeasedAmount = 0;
       this.bossWidth = this.w * 2;
       this.bossHeight = this.h * 2;
+      this.scoreKill = 50;
    }  
    draw()
    {
@@ -520,10 +523,11 @@ class Enemy
    }
    boss()
    {
+      
       if (rectCollision(this, player)) player.lives = 0;
       if (this.currentLives < 1)
       {
-         game.boss_fight_permission = false;
+         game.boss_fight_permission = false;        
          player.currentScore += 100;
          if (player.lives < 3) player.lives++;
          player.x = 450;
@@ -535,7 +539,7 @@ class Enemy
       }
    }
    move()
-   {
+   { 
       if (this.type == 'boss')
          if (this.x <= 100) this.x += 5;
       if (game.leftArr && !randomTile.hitPlayer && !game.boss_fight_permission) this.x += player.velocity;
@@ -618,6 +622,7 @@ class Enemy
    }
    dead()
    {
+      scoreAdded= true;
       enemyProjectile.ejected = false;
       enemyProjectile.toShootOrNotToShoot = 100;
       this.consecutive_kills++;
@@ -947,6 +952,25 @@ function PlayerOrder()
    player.processLives();
    player.powerender()
 }
+function ScoreAddedText()
+{
+   if (scoreAdded)
+   {
+      ctx.font = "35px Impact";
+      ctx.fillStyle = "red";
+      ctx.textAlign = "left";
+      ctx.fillText("+"+enemy.scoreKill, 85, 70);
+      scoreAddedCounter--;
+      if(scoreAddedCounter <= 0)
+      {
+         if (game.boss_fight_permission)
+         enemy.scoreKill = 100;
+         else enemy.scoreKill = 50;
+         scoreAdded = false;
+         scoreAddedCounter = 100;
+      }
+   }
+}
 function GameFinishedScreen()
 {
    var my_gradient = ctx.createLinearGradient(0, 0, canvas.width, 0);
@@ -1047,6 +1071,7 @@ function recurring()
          randomTile.appearnow();
       }
       EnemyProjectileOrder();
+      ScoreAddedText();
       EnemyOrder();
       PlayerOrder();
       ProjectileOrder();
