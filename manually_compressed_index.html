@@ -15,7 +15,7 @@ var flashingTextTimer2 = 30;
 var canvas = document.getElementById('game');
 var ctx = canvas.getContext('2d');
 var gradient = ctx.createLinearGradient(0, 0, canvas.width, 0);
-gradient.addColorStop("0", "magenta");
+gradient.addColorStop("0", " magenta");
 gradient.addColorStop("0.5", "yellow");
 gradient.addColorStop("1.0", "orange");
 var emptyImage = new Image();
@@ -27,14 +27,14 @@ var heart = new Image();
 var enemyImage = new Image();
 var bossImage = new Image();
 var enemyProjectileImage = new Image();
-baseTile.src = "../js13kgames_entry/assets/1.png"
-characterSpriteDefault.src = "../js13kgames_entry/assets/3.png"
-characterSpriteWalking.src = "../js13kgames_entry/assets/4.png"
-karambit.src = "../js13kgames_entry/assets/8.png"
-heart.src = "../js13kgames_entry/assets/7.png"
-enemyImage.src = "../js13kgames_entry/assets/5.png"
-bossImage.src = "../js13kgames_entry/assets/6.png"
-enemyProjectileImage.src = "../js13kgames_entry/assets/2.png"
+baseTile.src = "assets/1.png"
+characterSpriteDefault.src = "assets/3.png"
+characterSpriteWalking.src = "assets/4.png"
+karambit.src = "assets/8.png"
+heart.src = "assets/7.png"
+enemyImage.src = "assets/5.png"
+bossImage.src = "assets/6.png"
+enemyProjectileImage.src = "assets/2.png"
 var ImpactXInterval;
 var intervalOngoing = false;
 class Tile
@@ -53,16 +53,11 @@ var firstTile = tiles[0];
 tiles.push(new Tile(firstTile.x - 25, 475));
 class Game
 {
-   constructor(canvas_width, canvas_height)
+   constructor()
    {
-      this.gravity = true;
       this.leftArr = false;
       this.upArrow = false;
       this.rightArr = false;
-      this.canvas_width = canvas_width;
-      this.canvas_height = canvas_height;
-      this.primitive_tile_width = 25;
-      this.primitive_tile_height = 25;
       this.boss_fight_permission = false;
    }
    drawCanvas()
@@ -73,7 +68,7 @@ class Game
          my_gradient.addColorStop(0, "MediumOrchid");
          my_gradient.addColorStop(1, "darkslategrey");
          ctx.fillStyle = my_gradient;
-         ctx.fillRect(0, 0, this.canvas_width, this.canvas_height);
+         ctx.fillRect(0, 0, 500, 500);
       }
       else
       if (current_player_mode == 'beast')
@@ -82,7 +77,7 @@ class Game
          my_gradient.addColorStop(0, "darkblue");
          my_gradient.addColorStop(1, "saddlebrown");
          ctx.fillStyle = my_gradient;
-         ctx.fillRect(0, 0, this.canvas_width, this.canvas_height);
+         ctx.fillRect(0, 0, 500, 500);
          return;
       }
       else
@@ -91,7 +86,7 @@ class Game
          my_gradient.addColorStop(0, "darkblue");
          my_gradient.addColorStop(1, "lightblue");
          ctx.fillStyle = my_gradient;
-         ctx.fillRect(0, 0, this.canvas_width, this.canvas_height);
+         ctx.fillRect(0, 0, 500, 500);
          return;
       }
    }
@@ -100,15 +95,15 @@ class Game
       if (this.leftArr && !randomTile.hitPlayer && !this.boss_fight_permission)
       {
          var lastTile = tiles[tiles.length - 1];
-         tiles.push(new Tile(lastTile.x - this.primitive_tile_width, 475));
+         tiles.push(new Tile(lastTile.x - 25, 475));
          for (var i = 0; i < tiles.length; i++)
          {
-            ctx.drawImage(baseTile, 0, 0, 16, 16, tiles[i].x, tiles[i].y, this.primitive_tile_width, this.primitive_tile_height);
+            ctx.drawImage(baseTile, 0, 0, 16, 16, tiles[i].x, tiles[i].y, 25, 25);
             tiles[i].x += player.velocity;
          }
       }
       else
-         for (var i = 0; i < tiles.length; i++) ctx.drawImage(baseTile, 0, 0, 16, 16, tiles[i].x, tiles[i].y, this.primitive_tile_width, this.primitive_tile_height);
+         for (var i = 0; i < tiles.length; i++) ctx.drawImage(baseTile, 0, 0, 16, 16, tiles[i].x, tiles[i].y, 25, 25);
    }
    checkScore()
    {
@@ -128,14 +123,13 @@ class Player
       this.w = 20;
       this.h = 30;
       this.x = 450;
-      this.y = game.canvas_height - game.primitive_tile_height - this.h - 5;
+      this.y = 500 - 25 - this.h - 5;
       this.jumpForce = 15;
       this.verticalCollision = false;
       this.horizontalCollision = false;
       this.oldY = 0;
       this.jumpHeight = 90;
       this.velocity = 5;
-      this.gravityForce = 5;
       this.enemyBounce = false;
       this.playerWasOnTop = false;
       this.lives = 3;
@@ -151,27 +145,27 @@ class Player
    {
       if (this.power == 'invulnerable')
       {
-         animatePlayer(characterSpriteDefault, emptyImage, ctx, this.x, this.y, this.w, this.h);
+         animatePlayer(characterSpriteDefault, emptyImage, ctx, this.x, this.y, 20, 30);
          return;
       }
       if (game.leftArr && player.power == 'beast')
       {
          if (player.power == 'beast' && game.leftArr)
          {
-            animateFlipImage(characterSpriteDefault, characterSpriteWalking, ctx, this.w, this.h);
+            animateFlipImage(characterSpriteDefault, characterSpriteWalking, ctx, 20,30);
             return;
          }
-         animatePlayer(characterSpriteDefault, characterSpriteWalking, ctx, this.x, this.y, this.w, this.h);
+         animatePlayer(characterSpriteDefault, characterSpriteWalking, ctx, this.x, this.y, 20,30);
       }
-      if (game.leftArr && !randomTile.hitPlayer) animatePlayer(characterSpriteDefault, characterSpriteWalking, ctx, this.x, this.y, this.w, this.h);
+      if (game.leftArr && !randomTile.hitPlayer) animatePlayer(characterSpriteDefault, characterSpriteWalking, ctx, this.x, this.y, 20,30);
       else
       {
          if (player.power === 'beast')
          {
-            mirrorImage(ctx, characterSpriteDefault, this.x, this.y, this.w, this.h);
+            mirrorImage(ctx, characterSpriteDefault, this.x, this.y, 20,30);
             return;
          }
-         ctx.drawImage(characterSpriteDefault, this.x, this.y, this.w, this.h);
+         ctx.drawImage(characterSpriteDefault, this.x, this.y, 20,30);
       }
    }
    jump()
@@ -186,12 +180,12 @@ class Player
    move()
    {
       if (game.boss_fight_permission && game.leftArr && this.x >= 0) this.x -= 2;
-      if (game.boss_fight_permission && game.rightArr && this.x + this.w <= 500) this.x += 2;
+      if (game.boss_fight_permission && game.rightArr && this.x + 20 <= 500) this.x += 2;
    }
    ascertainGravity()
    {
       if (!this.verticalCollision && !this.playerWasOnTop) this.y += 5
-      if (this.y + this.h >= 475 || this.playerWasOnTop)
+      if (this.y + 30 >= 475 || this.playerWasOnTop)
       {
          this.jumpHeight = 90;
          this.verticalCollision = true;
@@ -227,7 +221,7 @@ class Player
    }
    drawLives()
    {
-      for (let i = 1; i <= this.lives; i++) ctx.drawImage(heart, game.canvas_width - i * 25, 10, 16, 16);
+      for (let i = 1; i <= this.lives; i++) ctx.drawImage(heart, 500 - i * 25, 10, 16, 16);
    }
    powerender()
    {
@@ -262,7 +256,7 @@ class Projectile
    {
       if (player.power == 'beast')
       {
-         this.x = this.x - player.w - 10;
+         this.x = this.x - 20 - 10;
          this.acceleration = 3;
       }
       if (player.power == 'beast') this.acceleration = 7
@@ -288,7 +282,7 @@ class Projectile
    }
    ascertainCollision()
    {
-      if (this.x >= game.canvas_width) this.x_dir *= -1;
+      if (this.x >= 500) this.x_dir *= -1;
       if (this.x <= (player.power == 'beast' ? 300 : 400) && !game.boss_fight_permission)
       {
          this.y_dir = 0;
@@ -365,7 +359,7 @@ class PowerUp
    {
       if (this.y + this.r <= 470) this.y += 5;
       if (game.leftArr && !randomTile.hitPlayer) this.x += player.velocity;
-      if (this.x >= game.canvas_width + this.r)
+      if (this.x >= 500 + this.r)
       {
          this.spawned = false;
          this.x = -250;
@@ -477,10 +471,10 @@ class Enemy
 {
    constructor()
    {
-      this.w = player.w * 2;
-      this.h = player.h * 1.5;
+      this.w = 20 * 2;
+      this.h = 30 * 1.5;
       this.x = -250;
-      this.y = game.canvas_height - game.primitive_tile_height - this.h - 5;
+      this.y = 500 - 25 - this.h - 5;
       this.maxLives = 2;
       this.currentLives = this.maxLives;
       this.verticalCollision = false;
@@ -499,7 +493,6 @@ class Enemy
    draw()
    {
       if (enemy.currentLives >= 1)
-      {
          if (enemy.type === 'boss')
          {
             this.w = this.bossWidth;
@@ -512,7 +505,6 @@ class Enemy
             this.h = this.bossHeight / 2;
             ctx.drawImage(enemyImage, this.x, this.y, this.w, this.h);
          }
-      }
    }
    fall()
    {
@@ -555,7 +547,7 @@ class Enemy
          intervalOngoing = false;
          return;
       }
-      if (Math.abs(this.x - player.x) < (this.w > player.w ? this.w : player.w) && this.y == player.y + player.h && player.power != 'invulnerable' && this.type != 'boss')
+      if (Math.abs(this.x - player.x) < (this.w > 20 ? this.w : 20) && this.y == player.y + 30 && player.power != 'invulnerable' && this.type != 'boss')
       {
          player.jumpHeight = 180;
          player.verticalCollision = true;
@@ -582,7 +574,7 @@ class Enemy
       this.currentLives = this.maxLives;
       this.x = randomTile.x < 0 ? randomTile.x - this.w * 2 : -200;
       this.x = rectCollision(this, randomTile) ? this.x - randomTile.w - this.w : this.x;
-      this.y = game.canvas_height - this.h - game.primitive_tile_height;
+      this.y = 500 - this.h - 25;
    }
    healthbar()
    {
@@ -598,7 +590,6 @@ class Enemy
    randomlymove()
    {
       if (!game.boss_fight_permission)
-      {
          if (this.appeased && this.appeasedAmount < 10)
          {
             if (rectCollision(this, randomTile)) this.direction *= -1;
@@ -611,7 +602,6 @@ class Enemy
             this.appeased = Math.random() < 0.075 ? true : false;
             this.appeasedAmount = 0;
          }
-      }
    }
    dead()
    {
@@ -723,7 +713,7 @@ class EnemyProjectile
       }
    }
 }
-game = new Game(500, 500);
+game = new Game();
 
 function DeclareGameParameters()
 {
@@ -804,17 +794,17 @@ function animatePlayer(defaultImage, walkingImage, context)
 {
    if (player.timerForFirstImage < 5)
    {
-      context.drawImage(defaultImage, player.x, player.y, player.w, player.h);
+      context.drawImage(defaultImage, player.x, player.y, 20, 30);
       player.timerForFirstImage++;
    }
    else if (player.timerForSecondImage < 5)
    {
-      context.drawImage(walkingImage, player.x, player.y, player.w, player.h);
+      context.drawImage(walkingImage, player.x, player.y, 20, 30);
       player.timerForSecondImage++
    }
    else
    {
-      context.drawImage(defaultImage, player.x, player.y, player.w, player.h);
+      context.drawImage(defaultImage, player.x, player.y, 20, 30);
       player.timerForFirstImage = 0
       player.timerForSecondImage = 0;
    }
@@ -836,7 +826,7 @@ function animateFlipImage(defaultImage, walkingImage, ctx, spriteWidth, spriteHe
       ctx.save();
       ctx.translate(spriteWidth / 2, spriteHeight / 2 - 15);
       ctx.scale(-1, 1);
-      ctx.drawImage(defaultImage, -player.x, player.y, player.w, player.h);
+      ctx.drawImage(defaultImage, -player.x, player.y, 20, 30);
       ctx.restore();
       player.timerForFirstImage++;
    }
@@ -845,7 +835,7 @@ function animateFlipImage(defaultImage, walkingImage, ctx, spriteWidth, spriteHe
       ctx.save();
       ctx.translate(spriteWidth / 2, spriteHeight / 2 - 15);
       ctx.scale(-1, 1);
-      ctx.drawImage(walkingImage, -player.x, player.y, player.w, player.h);
+      ctx.drawImage(walkingImage, -player.x, player.y, 20, 30);
       ctx.restore();
       player.timerForSecondImage++;
    }
@@ -854,7 +844,7 @@ function animateFlipImage(defaultImage, walkingImage, ctx, spriteWidth, spriteHe
       ctx.save();
       ctx.translate(spriteWidth / 2, spriteHeight / 2 - 15);
       ctx.scale(-1, 1);
-      ctx.drawImage(defaultImage, -player.x, player.y, player.w, player.h);
+      ctx.drawImage(defaultImage, -player.x, player.y, 20, 30);
       ctx.restore();
       player.timerForFirstImage = 0;
       player.timerForSecondImage = 0;
@@ -1011,8 +1001,8 @@ function WaitForStart()
          flashingTextTimer++;
       }
       else if (flashingTextTimer2 > 0)
-      
-{         my_gradient.addColorStop("0", " magenta");
+      {         
+      	 my_gradient.addColorStop("0", " magenta");
          my_gradient.addColorStop("0.5", "orange");
          my_gradient.addColorStop("1.0", "blue");
          ctx.fillStyle = "lightyellow";
