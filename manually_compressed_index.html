@@ -596,7 +596,6 @@ class Enemy
    {
       if (!game.boss_fight_permission)
       {
-
          if (this.appeased && this.appeasedAmount < 30)
          {
             if (rectCollision(this, randomTile))
@@ -604,7 +603,7 @@ class Enemy
                this.direction *= -1;
                while (rectCollision(this, randomTile))
                   this.x += 2.5 * this.direction;
-               return;
+               this.appeasedAmount = 0;
             } 
             this.x += 2.5 * this.direction;
             this.appeasedAmount++;
