@@ -59,6 +59,7 @@ class Game
       this.upArrow = false;
       this.rightArr = false;
       this.boss_fight_permission = false;
+      this.gained_points_timer = 300;
    }
    drawCanvas()
    {
@@ -107,13 +108,20 @@ class Game
    }
    checkScore()
    {
-      if (player.currentScore == 50)
+      if (player.currentScore == 50 && !this.boss_fight_permission)
       {
          randomTile.x = 600;
          this.boss_fight_permission = true;
+         enemy.maxLives = 5;
+         enemy.currentLives = 5;
          enemy.type = 'boss';
          player.power = null;
       }
+   }
+   showGainedPoints(points){
+         ctx.font = "35px Impact";
+         ctx.fillStyle = gradient;
+         ctx.fillText(points, 20, 20)
    }
 }
 class Player
@@ -312,7 +320,7 @@ class Projectile
          {
             ImpactX(enemy, 15);
             enemy.currentLives--;
-            if (enemy.currentLives < 1 && enemy.type !== 'boss') enemy.dead();
+            if (enemy.currentLives < 1 && enemy.type !== 'boss'){ enemy.dead(); game.showGainedPoints(50); }
             this.ejected = false;
             this.ascertainMovement();
             return;
@@ -466,7 +474,6 @@ class Cloud
       if (this.cloudX >= 700) this.cloudX = -300;
    }
 }
-cloud = new Cloud();
 class Enemy
 {
    constructor()
@@ -480,7 +487,6 @@ class Enemy
       this.verticalCollision = false;
       this.negativeCollision = false;
       this.decrement_lives_permission = 10;
-      this.moving = false;
       this.type = 'normal';
       this.consecutive_kills = 0;
       this.hitTile = false;
@@ -489,7 +495,7 @@ class Enemy
       this.appeasedAmount = 0;
       this.bossWidth = this.w * 2;
       this.bossHeight = this.h * 2;
-   }
+   }  
    draw()
    {
       if (enemy.currentLives >= 1)
@@ -519,9 +525,10 @@ class Enemy
       {
          game.boss_fight_permission = false;
          player.currentScore += 100;
-         player.lives++;
+         if (player.lives < 3) player.lives++;
          player.x = 450;
          current_player_mode = null;
+         this.maxLives = 2;
          this.type = 'normal';
          this.dead();
          return;
@@ -564,17 +571,19 @@ class Enemy
          ImpactX(tiles, 15, true);
          ImpactX(cloud, 15, true);
          ImpactX(powerup, 15, true);
-         this.decrement_lives_permission = HitPlayer1(this.decrement_lives_permission);
-         return;
+         this.decrement_lives_permission = HitPlayer1(this.decrement_lives_permission);   
       }
       this.decrement_lives_permission = HitPlayer2(this.decrement_lives_permission);
    }
    respawn()
    {
       this.currentLives = this.maxLives;
+
       this.x = randomTile.x < 0 ? randomTile.x - this.w * 2 : -200;
       this.x = rectCollision(this, randomTile) ? this.x - randomTile.w - this.w : this.x;
       this.y = 500 - this.h - 25;
+
+      this.maxLives = this.type != 'boss' ? 2 : 5;
    }
    healthbar()
    {
@@ -614,7 +623,7 @@ class Enemy
          this.consecutive_kills = 0;
       }
       player.currentScore += 50;
-      this.maxLives = enemy.type === 'boss' ? 4 : 2;
+
       this.currentLives = this.maxLives;
       this.respawn();
    }
@@ -714,17 +723,17 @@ class EnemyProjectile
    }
 }
 game = new Game();
-
 function DeclareGameParameters()
 {
-   randomTile = new RandomTile(100, baseTile);
    player = new Player();
-   enemy = new Enemy();
    projectile = new Projectile(10, 10, 20, 20);
-   enemyProjectile = new EnemyProjectile();
+   powerup = new PowerUp();
+   randomTile = new RandomTile(100, baseTile);
+   cloud = new Cloud();
+   enemy = new Enemy();
    aim = new Aim();
+   enemyProjectile = new EnemyProjectile();
 }
-
 function ScoreText()
 {
    ctx.font = "35px Impact";
@@ -737,7 +746,6 @@ function ScoreText()
       gameFinished = true;
    }
 }
-
 function eventHandler()
 {
    window.addEventListener('keydown', function(event)
@@ -921,14 +929,12 @@ function EnemyOrder()
    enemy.ascertainCollision();
    enemy.randomlymove();
 }
-
 function ProjectileOrder()
 {
    projectile.ascertainMovement();
    projectile.ascertainCollision();
    projectile.draw();
 }
-
 function PlayerOrder()
 {
    player.ascertainGravity();
@@ -938,7 +944,6 @@ function PlayerOrder()
    player.processLives();
    player.powerender()
 }
-
 function GameFinishedScreen()
 {
    var my_gradient = ctx.createLinearGradient(0, 0, canvas.width, 0);
@@ -950,7 +955,6 @@ function GameFinishedScreen()
    ctx.fillText("Game finished!", canvas.width / 2, canvas.height / 2 - 100);
    ctx.fillText("Press Enter to restart!", canvas.width / 2, canvas.height / 2);
 }
-
 function StartScreenText()
 {
    ctx.fillStyle = "brown";
@@ -1021,7 +1025,6 @@ function WaitForStart()
    }
    else GameFinishedScreen();
 }
-powerup = new PowerUp();
 
 function recurring()
 {
