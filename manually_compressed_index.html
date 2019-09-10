@@ -799,8 +799,7 @@ function eventHandler()
       else
       {
          if (event.keyCode == 38) game.upArrow = true;
-         if (event.keyCode == 32 && player.power !== 'invulnerable') projectile.ejected = true;
-         
+         if (event.keyCode == 32 && player.power !== 'invulnerable') projectile.ejected = true;         
          if (event.keyCode == 37) game.leftArr = !player.dead ? true : false;
          if (event.keyCode == 39) game.rightArr = true;
       }
