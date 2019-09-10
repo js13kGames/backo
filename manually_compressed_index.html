@@ -37,6 +37,8 @@ bossImage.src = "assets/6.png"
 enemyProjectileImage.src = "assets/2.png"
 var ImpactXInterval;
 var intervalOngoing = false;
+var scoreAddedCounter = 100;
+var scoreAdded = false;
 class Tile
 {
    constructor(x, y)
@@ -108,20 +110,21 @@ class Game
    }
    checkScore()
    {
-      if ((player.currentScore == 500 || player.currentScore == 1000) && !this.boss_fight_permission)
+      if (player.currentScore == 500 && !this.boss_fight_permission)
       {
          randomTile.x = 600;
          this.boss_fight_permission = true;
-         enemy.maxLives = 5;
-         enemy.currentLives = 5;
+         enemy.maxLives = 6;
+         enemy.currentLives = 6;
          enemy.type = 'boss';
          player.power = null;
       }
    }
-   showGainedPoints(points){
-         ctx.font = "35px Impact";
-         ctx.fillStyle = gradient;
-         ctx.fillText(points, 20, 20)
+   showGainedPoints(points)
+   {
+      ctx.font = "35px Impact";
+      ctx.fillStyle = gradient;
+      ctx.fillText(points, 20, 20)
    }
 }
 class Player
@@ -160,20 +163,20 @@ class Player
       {
          if (player.power == 'beast' && game.leftArr)
          {
-            animateFlipImage(characterSpriteDefault, characterSpriteWalking, ctx, 20,30);
+            animateFlipImage(characterSpriteDefault, characterSpriteWalking, ctx, 20, 30);
             return;
          }
-         animatePlayer(characterSpriteDefault, characterSpriteWalking, ctx, this.x, this.y, 20,30);
+         animatePlayer(characterSpriteDefault, characterSpriteWalking, ctx, this.x, this.y, 20, 30);
       }
-      if (game.leftArr && !randomTile.hitPlayer) animatePlayer(characterSpriteDefault, characterSpriteWalking, ctx, this.x, this.y, 20,30);
+      if (game.leftArr && !randomTile.hitPlayer) animatePlayer(characterSpriteDefault, characterSpriteWalking, ctx, this.x, this.y, 20, 30);
       else
       {
          if (player.power === 'beast')
          {
-            mirrorImage(ctx, characterSpriteDefault, this.x, this.y, 20,30);
+            mirrorImage(ctx, characterSpriteDefault, this.x, this.y, 20, 30);
             return;
          }
-         ctx.drawImage(characterSpriteDefault, this.x, this.y, 20,30);
+         ctx.drawImage(characterSpriteDefault, this.x, this.y, 20, 30);
       }
    }
    jump()
@@ -239,6 +242,7 @@ class Player
          if (this.powerEnderCountdown == 0)
          {
             this.power = null;
+            if (rectCollision(this, randomTile)) game.upArrow = true;
             current_player_mode = null;
          }
       }
@@ -321,7 +325,12 @@ class Projectile
             this.ejected = false;
             this.ascertainMovement();
             enemy.currentLives--;
-            if (enemy.currentLives < 1 && enemy.type !== 'boss'){ enemy.dead(); game.showGainedPoints(50); return;}
+            if (enemy.currentLives < 1 && enemy.type !== 'boss')
+            {
+               enemy.dead();
+               game.showGainedPoints(50);
+               return;
+            }
             ImpactX(enemy, 15);
             return;
          }
@@ -332,7 +341,7 @@ class PowerUp
 {
    constructor()
    {
-      this.x = -300;
+      this.x = -250;
       this.y = 465;
       this.r = 5;
       this.type = null;
@@ -364,7 +373,7 @@ class PowerUp
    }
    move()
    {
-      if (this.y + this.r <= 470) this.y += 5;
+      if (this.y + this.r <= 470) this.y += this.r;
       if (game.leftArr && !randomTile.hitPlayer) this.x += player.velocity;
       if (this.x >= 500 + this.r)
       {
@@ -378,13 +387,11 @@ class PowerUp
       {
          if (game.leftArr && !randomTile.hitPlayer)
          {
-            let rng = Math.random();
-            if (rng <= 0.005)
+            if (Math.random() < 0.005)
             {
-               this.x = randomTile < 0 ? randomTile.x - this.r * 2 : -300;
-               let rngType = Math.random();
-               if (rngType >= 0.7) this.type = 'invulnerable'
-               else this.type = 'beast';
+               this.x = -250;
+               while (rectCollision(this, randomTile)) this.x--;
+               this.type = Math.random() < 0.005 ? 'invulnerable' : 'beast';
                this.spawned = true;
             }
          }
@@ -440,7 +447,7 @@ class RandomTile
    {
       this.appear = false;
       this.w = 20 * Math.floor((Math.random() * 5) + 1)
-      this.x = enemy.x < 0 ? enemy.x - this.w * 4 : -this.w;
+      this.x = -200;
       this.h = 10 + 10 * Math.floor((Math.random() * 5) + 1);
       this.y = 445 - (30 * (this.h / 30 - 1)); //adjust y to new height
    }
@@ -490,12 +497,13 @@ class Enemy
       this.type = 'normal';
       this.consecutive_kills = 0;
       this.hitTile = false;
-      this.direction = Math.random() > 0.50 ? -1 : 1;
-      this.appeased = true;
-      this.appeasedAmount = 0;
+      this.direction = -1;
+      this.appeasedDuration = 50;
       this.bossWidth = this.w * 2;
       this.bossHeight = this.h * 2;
-   }  
+      this.scoreKill = 50;
+      this.rMove_onPath = false;
+   }
    draw()
    {
       if (enemy.currentLives >= 1)
@@ -505,12 +513,12 @@ class Enemy
             this.h = this.bossHeight;
             ctx.drawImage(bossImage, this.x, this.y - this.h / 2, this.w, this.h);
          }
-         else
-         {
-            this.w = this.bossWidth / 2;
-            this.h = this.bossHeight / 2;
-            ctx.drawImage(enemyImage, this.x, this.y, this.w, this.h);
-         }
+      else
+      {
+         this.w = this.bossWidth / 2;
+         this.h = this.bossHeight / 2;
+         ctx.drawImage(enemyImage, this.x, this.y, this.w, this.h);
+      }
    }
    fall()
    {
@@ -544,13 +552,9 @@ class Enemy
    {
       if (this.x > 500)
       {
+         scoreAdded = true;
+         player.currentScore += 50;
          this.respawn();
-         return;
-      }
-      if (rectCollision(this, randomTile))
-      {
-         clearInterval(ImpactXInterval);
-         intervalOngoing = false;
          return;
       }
       if (Math.abs(this.x - player.x) < (this.w > 20 ? this.w : 20) && this.y == player.y + 30 && player.power != 'invulnerable' && this.type != 'boss')
@@ -570,16 +574,16 @@ class Enemy
          ImpactX(tiles, 15, true);
          ImpactX(cloud, 15, true);
          ImpactX(powerup, 15, true);
-         this.decrement_lives_permission = HitPlayer1(this.decrement_lives_permission);   
+         this.decrement_lives_permission = HitPlayer1(this.decrement_lives_permission);
       }
       this.decrement_lives_permission = HitPlayer2(this.decrement_lives_permission);
    }
    respawn()
    {
       this.currentLives = this.maxLives;
-      this.x = enemy.type === 'boss' ? -this.w * 4 : randomTile.x < 0 ? randomTile.x - this.w * 4 : -this.w;
+      this.x = randomTile < 0 ? randomTile.x - this.w * 2 : -400;
+      this.x = rectCollision(this, randomTile) ? randomTile.x - randomTile.w - this.w : this.x;
       this.y = 500 - this.h - 25;
-      this.maxLives = this.type != 'boss' ? 2 : 5;
    }
    healthbar()
    {
@@ -592,32 +596,32 @@ class Enemy
          ctx.fillRect(this.x, enemy.type === 'boss' ? this.y - this.h / 1.5 : this.y - this.h / 3, (this.w - this.w / 6) * ((this.currentLives * 100 / this.maxLives) / 100), 5);
       }
    }
-   randomlymove()
+   r_move()
    {
       if (!game.boss_fight_permission)
       {
-         if (this.appeased && this.appeasedAmount < 30)
+         if (this.appeasedDuration > 1 && !intervalOngoing)
          {
-            if (rectCollision(this, randomTile))
+            if (rectCollision(this, randomTile) && !this.rMove_onPath)
             {
                this.direction *= -1;
-               while (rectCollision(this, randomTile))
-                  this.x += 2.5 * this.direction;
-               this.appeasedAmount = 0;
-            } 
-            this.x += 2.5 * this.direction;
-            this.appeasedAmount++;
+               this.appeasedDuration = 50;
+               this.rMove_onPath = true;
+            }
+            this.x += 2 * this.direction;
+            this.appeasedDuration--;
          }
          else
          {
-            this.direction = Math.random() > 0.35 ? this.direction : this.direction * -1;
-            this.appeased = Math.random() < 0.075 ? true : false;
-            this.appeasedAmount = 0;
+            this.direction = Math.random() < 0.5 ? -1 : 1;
+            this.appeasedDuration = randomIntFromInterval(25, 50);
+            this.rMove_onPath = false;
          }
       }
    }
    dead()
    {
+      scoreAdded = true;
       enemyProjectile.ejected = false;
       enemyProjectile.toShootOrNotToShoot = 100;
       this.consecutive_kills++;
@@ -726,6 +730,7 @@ class EnemyProjectile
    }
 }
 game = new Game();
+
 function DeclareGameParameters()
 {
    player = new Player();
@@ -737,18 +742,25 @@ function DeclareGameParameters()
    aim = new Aim();
    enemyProjectile = new EnemyProjectile();
 }
+
 function ScoreText()
 {
    ctx.font = "35px Impact";
    ctx.fillStyle = gradient;
    ctx.textAlign = "left";
    ctx.fillText("Score: " + player.currentScore, 7, 35);
-   if (player.currentScore >= 1100)
+   if (player.currentScore == 1000)
    {
       gameStarted = false;
       gameFinished = true;
    }
 }
+
+function randomIntFromInterval(min, max)
+{
+   return Math.floor(Math.random() * (max - min + 1) + min);
+}
+
 function eventHandler()
 {
    window.addEventListener('keydown', function(event)
@@ -764,7 +776,7 @@ function eventHandler()
       else
       {
          if (event.keyCode == 38) game.upArrow = true;
-         if (event.keyCode == 32) projectile.ejected = true;
+         if (event.keyCode == 32 && player.power !== 'invulnerable') projectile.ejected = true;
          if (event.keyCode == 37) game.leftArr = true;
          if (event.keyCode == 39) game.rightArr = true;
       }
@@ -775,6 +787,7 @@ function eventHandler()
       if (event.keyCode == 39) game.rightArr = false;
    }, false);
 }
+
 function ImpactX(entity, repetitions, reverse = false)
 {
    if (intervalOngoing) return;
@@ -782,6 +795,15 @@ function ImpactX(entity, repetitions, reverse = false)
    let x = 0;
    ImpactXInterval = window.setInterval(function()
    {
+      if (entity instanceof Enemy && rectCollision(entity, randomTile))
+      {
+         intervalOngoing = false;
+         entity.direction = 1;
+         entity.appeasedDuration = 50;
+         entity.rMove_onPath = true;
+         window.clearInterval(ImpactXInterval);
+         return;
+      }
       if (reverse)
       {
          game.upArrow = true;
@@ -789,7 +811,7 @@ function ImpactX(entity, repetitions, reverse = false)
       }
       else
       {
-         entity.x -= 10;
+         entity.x -= 6;
       }
       if (++x === repetitions)
       {
@@ -799,6 +821,7 @@ function ImpactX(entity, repetitions, reverse = false)
       }
    }, 16.6666666667);
 }
+
 function animatePlayer(defaultImage, walkingImage, context)
 {
    if (player.timerForFirstImage < 5)
@@ -818,6 +841,7 @@ function animatePlayer(defaultImage, walkingImage, context)
       player.timerForSecondImage = 0;
    }
 }
+
 function mirrorImage(ctx, spriteImage, sourceX, sourceY, spriteWidth, spriteHeight)
 {
    ctx.save();
@@ -927,14 +951,16 @@ function EnemyOrder()
    enemy.fall();
    enemy.move();
    enemy.ascertainCollision();
-   enemy.randomlymove();
+   enemy.r_move();
 }
+
 function ProjectileOrder()
 {
    projectile.ascertainMovement();
    projectile.ascertainCollision();
    projectile.draw();
 }
+
 function PlayerOrder()
 {
    player.ascertainGravity();
@@ -944,6 +970,26 @@ function PlayerOrder()
    player.processLives();
    player.powerender()
 }
+
+function ScoreAddedText()
+{
+   if (scoreAdded)
+   {
+      ctx.font = "35px Impact";
+      ctx.fillStyle = "red";
+      ctx.textAlign = "left";
+      ctx.fillText("+" + enemy.scoreKill, 85, 70);
+      scoreAddedCounter--;
+      if (scoreAddedCounter <= 0)
+      {
+         if (game.boss_fight_permission) enemy.scoreKill = 100;
+         else enemy.scoreKill = 50;
+         scoreAdded = false;
+         scoreAddedCounter = 100;
+      }
+   }
+}
+
 function GameFinishedScreen()
 {
    var my_gradient = ctx.createLinearGradient(0, 0, canvas.width, 0);
@@ -955,6 +1001,7 @@ function GameFinishedScreen()
    ctx.fillText("Game finished!", canvas.width / 2, canvas.height / 2 - 100);
    ctx.fillText("Press Enter to restart!", canvas.width / 2, canvas.height / 2);
 }
+
 function StartScreenText()
 {
    var my_gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
@@ -962,7 +1009,6 @@ function StartScreenText()
    my_gradient.addColorStop("1.0", "Khaki");
    ctx.fillStyle = my_gradient;
    ctx.fillRect(0, 0, 500, 500);
-
    ctx.fillStyle = "DarkSlateGrey";
    ctx.textAlign = "center";
    ctx.font = "18px Lucida Console";
@@ -1012,6 +1058,38 @@ function WaitForStart()
    {
       game.boss_fight_permission = false;
       current_player_mode = null;
+      ctx.font = "35px Impact";
+      var my_gradient = ctx.createLinearGradient(0, 0, canvas.width, 0);
+      my_gradient.addColorStop("0", " magenta");
+      my_gradient.addColorStop("0.5", "yellow");
+      my_gradient.addColorStop("1.0", "purple");
+      ctx.fillStyle = my_gradient;
+      ctx.textAlign = "center";
+      ctx.fillText("Backo", canvas.width / 2, canvas.height / 2 - 100);
+      my_gradient = ctx.createLinearGradient(0, 0, 320, 0);
+      ctx.fillStyle = "red";
+      ctx.textAlign = "center";
+      if (flashingTextTimer < 30)
+      {
+         ctx.fillText("PRESS ENTER TO START!", canvas.width / 2, canvas.height / 2);
+         flashingTextTimer++;
+      }
+      else if (flashingTextTimer2 > 0)
+      {
+         my_gradient.addColorStop("0", " magenta");
+         my_gradient.addColorStop("0.5", "orange");
+         my_gradient.addColorStop("1.0", "blue");
+         ctx.fillStyle = "lightyellow";
+         ctx.fillText("PRESS ENTER TO START!", canvas.width / 2, canvas.height / 2);
+         flashingTextTimer2--;
+      }
+      else
+      {
+         ctx.fillStyle = "red";
+         ctx.fillText("PRESS ENTER TO START!", canvas.width / 2, canvas.height / 2);
+         flashingTextTimer = 0;
+         flashingTextTimer2 = 30;
+      }
       StartScreenText()
       DeclareGameParameters();
    }
@@ -1036,6 +1114,7 @@ function recurring()
          randomTile.appearnow();
       }
       EnemyProjectileOrder();
+      ScoreAddedText();
       EnemyOrder();
       PlayerOrder();
       ProjectileOrder();
