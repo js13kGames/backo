@@ -39,6 +39,7 @@ var ImpactXInterval;
 var intervalOngoing = false;
 var scoreAddedCounter = 100;
 var scoreAdded = false;
+var deathCountdown = 150;
 class Tile
 {
    constructor(x, y)
@@ -95,7 +96,7 @@ class Game
    }
    drawTiles()
    {
-      if (this.leftArr && !randomTile.hitPlayer && !this.boss_fight_permission)
+      if (this.leftArr && !randomTile.hitPlayer && !this.boss_fight_permission && !player.dead)
       {
          var lastTile = tiles[tiles.length - 1];
          tiles.push(new Tile(lastTile.x - 25, 475));
@@ -151,10 +152,13 @@ class Player
       this.currentScore = 0;
       this.power = null;
       this.powerEnderCountdown = 300;
+      this.dead = false;
    }
    draw()
    {
-      if (this.power == 'invulnerable')
+      if (!this.dead)
+      {
+         if (this.power == 'invulnerable')
       {
          animatePlayer(characterSpriteDefault, emptyImage, ctx, this.x, this.y, 20, 30);
          return;
@@ -177,6 +181,7 @@ class Player
             return;
          }
          ctx.drawImage(characterSpriteDefault, this.x, this.y, 20, 30);
+      }
       }
    }
    jump()
@@ -221,13 +226,24 @@ class Player
    processLives()
    {
       this.drawLives();
-      if (this.lives == 0)
+      if (this.lives <= 0)
       {
+         this.dead = true;
+         ctx.fillStyle = "red";
+         ctx.fillText("YOU DIED!", 175, 250);
+         deathCountdown--;
+         this.x = 700;
+         if (deathCountdown == 0)
+         {
+         this.x=450;
          enemy.x -= 30;
          this.lives = 3;
          gameStarted = false;
          enemy.respawn();
          WaitForStart();
+         this.dead = false;
+         deathCountdown = 150;
+         }         
       }
    }
    drawLives()
@@ -266,6 +282,7 @@ class Projectile
    }
    draw()
    {
+   if(!player.dead) {
       if (player.power == 'beast')
       {
          this.x = this.x - 20 - 10;
@@ -278,7 +295,7 @@ class Projectile
          rotateAndPaintImage(ctx, karambit, this.rotationSpeed, this.x, this.y, this.w / 2, this.h / 2, this.w, this.h)
          this.rotationSpeed += 0.3;
       }
-   }
+   }}
    ascertainMovement()
    {
       if (!this.ejected)
@@ -375,7 +392,7 @@ class PowerUp
    move()
    {
       if (this.y + this.r <= 470) this.y += this.r;
-      if (game.leftArr && !randomTile.hitPlayer) this.x += player.velocity;
+      if (game.leftArr && !randomTile.hitPlayer) this.x += !player.dead ? player.velocity : 0;
       if (this.x >= 500 + this.r)
       {
          this.spawned = false;
@@ -426,7 +443,7 @@ class RandomTile
    appearnow()
    {
       ctx.drawImage(this.tile, this.x, this.y, this.w, this.h);
-      if (game.leftArr && !this.hitPlayer) this.x += player.velocity;
+      if (game.leftArr && !this.hitPlayer) this.x += !player.dead ? player.velocity : 0;
       if (this.x > 600) this.disappear();
       if (rectCollision(this, player)) this.hitPlayer = true;
       else this.hitPlayer = false;
@@ -478,7 +495,7 @@ class Cloud
       grd.addColorStop(1, "#C7B9B9");
       ctx.fillStyle = grd;
       ctx.fill();
-      if (game.leftArr && !randomTile.hitPlayer) this.cloudX += player.velocity;
+      if (game.leftArr && !randomTile.hitPlayer) this.cloudX += !player.dead ? player.velocity : 0;
       if (this.cloudX >= 700) this.cloudX = -300;
    }
 }
@@ -547,7 +564,7 @@ class Enemy
    {
       if (this.type == 'boss')
          if (this.x <= 100) this.x += 5;
-      if (game.leftArr && !randomTile.hitPlayer && !game.boss_fight_permission) this.x += player.velocity;
+      if (game.leftArr && !randomTile.hitPlayer && !game.boss_fight_permission) this.x += !player.dead ? player.velocity : 0;
    }
    ascertainCollision()
    {
@@ -647,11 +664,12 @@ class Aim
    }
    draw()
    {
+      if (!player.dead) {
       ctx.fillStyle = 'red'
       ctx.globalAlpha = 0.5;
       ctx.fillRect(this.x, this.y, this.w, this.h);
       ctx.globalAlpha = 1.0;
-   }
+   }}
    move()
    {
       if (game.boss_fight_permission) this.x = player.x - (500 - player.x) * 2 - 190 - (450 - player.y);
@@ -750,8 +768,16 @@ function ScoreText()
    ctx.fillText("SCORE:" + player.currentScore, 7, 35);
    if (player.currentScore >= 1100)
    {
-      gameStarted = false;
-      gameFinished = true;
+      player.dead = true;
+      deathCountdown--;
+      ctx.fillStyle = "red";
+      ctx.fillText("GAME COMPLETED!", 110, 250);
+      if (deathCountdown == 0)
+      {
+         gameStarted = false;
+         gameFinished = true;
+         deathCountdown = 150;
+      }   
    }
 }
 function randomIntFromInterval(min, max)
@@ -774,7 +800,8 @@ function eventHandler()
       {
          if (event.keyCode == 38) game.upArrow = true;
          if (event.keyCode == 32 && player.power !== 'invulnerable') projectile.ejected = true;
-         if (event.keyCode == 37) game.leftArr = true;
+         
+         if (event.keyCode == 37) game.leftArr = !player.dead ? true : false;
          if (event.keyCode == 39) game.rightArr = true;
       }
    }, false);
