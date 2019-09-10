@@ -68,30 +68,30 @@ class Game
       if (this.boss_fight_permission)
       {
          var my_gradient = ctx.createLinearGradient(0, 0, 0, 320);
-         my_gradient.addColorStop(0, "MediumOrchid");
-         my_gradient.addColorStop(1, "darkslategrey");
+         my_gradient.addColorStop(0, "Maroon");
+         my_gradient.addColorStop(1, "black");
          ctx.fillStyle = my_gradient;
          ctx.fillRect(0, 0, 500, 500);
       }
       else
-      if (current_player_mode == 'beast')
-      {
-         var my_gradient = ctx.createLinearGradient(0, 0, 0, 320);
-         my_gradient.addColorStop(0, "darkblue");
-         my_gradient.addColorStop(1, "saddlebrown");
-         ctx.fillStyle = my_gradient;
-         ctx.fillRect(0, 0, 500, 500);
-         return;
-      }
-      else
-      {
-         var my_gradient = ctx.createLinearGradient(0, 0, 0, 320);
-         my_gradient.addColorStop(0, "darkblue");
-         my_gradient.addColorStop(1, "lightblue");
-         ctx.fillStyle = my_gradient;
-         ctx.fillRect(0, 0, 500, 500);
-         return;
-      }
+         if (current_player_mode == 'beast')
+         {
+            var my_gradient = ctx.createLinearGradient(0, 0, 0, 320);
+            my_gradient.addColorStop(0, "DarkGoldenrod");
+            my_gradient.addColorStop(1, "saddlebrown");
+            ctx.fillStyle = my_gradient;
+            ctx.fillRect(0, 0, 500, 500);
+            return;
+         }
+         else
+         {
+            var my_gradient = ctx.createLinearGradient(0, 0, 0, 320);
+            my_gradient.addColorStop(0, "SandyBrown");
+            my_gradient.addColorStop(1, "Cornsilk");
+            ctx.fillStyle = my_gradient;
+            ctx.fillRect(0, 0, 500, 500);
+            return;
+         }
    }
    drawTiles()
    {
@@ -110,7 +110,7 @@ class Game
    }
    checkScore()
    {
-      if (player.currentScore == 500 && !this.boss_fight_permission)
+      if ((player.currentScore == 500 || player.currentScore == 1000) && !this.boss_fight_permission)
       {
          randomTile.x = 600;
          this.boss_fight_permission = true;
@@ -356,6 +356,7 @@ class PowerUp
             ctx.beginPath();
             ctx.arc(this.x, this.y, this.r, 0, 2 * Math.PI, false);
             ctx.fillStyle = 'white';
+            ctx.lineWidth=5;
             ctx.stroke();
             ctx.fill();
             this.move();
@@ -391,7 +392,7 @@ class PowerUp
             {
                this.x = -250;
                while (rectCollision(this, randomTile)) this.x--;
-               this.type = Math.random() < 0.005 ? 'invulnerable' : 'beast';
+               this.type = Math.random() < 0.4 ? 'invulnerable' : 'beast';
                this.spawned = true;
             }
          }
@@ -456,8 +457,8 @@ class Cloud
 {
    constructor(x, y)
    {
-      this.cloudX = -300
-      this.cloudY = Math.random() * (200 - 50) + 50
+      this.cloudX = -300;
+      this.cloudY = Math.random() * (200 - 110) + 110;
    }
    draw()
    {
@@ -704,15 +705,15 @@ class EnemyProjectile
    }
    reset()
    {
-      if (this.x > canvas.width + 50)
+      if (this.x > canvas.width + (enemy.type == 'boss' ? 25 : 50))
       {
          this.ejected = false;
-         this.toShootOrNotToShoot = 100;
+         this.toShootOrNotToShoot = enemy.type == 'boss' ? 20 : 100;
       }
       if (rectCollision(this, randomTile))
       {
          this.ejected = false;
-         this.toShootOrNotToShoot = 100;
+         this.toShootOrNotToShoot = enemy.type == 'boss' ? 20 : 100;
       }
    }
    hitplayer()
@@ -723,14 +724,13 @@ class EnemyProjectile
          {
             this.decrement_lives_permission = HitPlayer1(this.decrement_lives_permission);
             this.ejected = false;
-            this.toShootOrNotToShoot = 100;
+            this.toShootOrNotToShoot = enemy.type == 'boss' ? 20 : 100;
          }
          this.decrement_lives_permission = HitPlayer2(this.decrement_lives_permission);
       }
    }
 }
 game = new Game();
-
 function DeclareGameParameters()
 {
    player = new Player();
@@ -742,25 +742,22 @@ function DeclareGameParameters()
    aim = new Aim();
    enemyProjectile = new EnemyProjectile();
 }
-
 function ScoreText()
 {
-   ctx.font = "35px Impact";
-   ctx.fillStyle = gradient;
+   ctx.font = "35px Lucida Console";
+   ctx.fillStyle = 'NavajoWhite';
    ctx.textAlign = "left";
-   ctx.fillText("Score: " + player.currentScore, 7, 35);
-   if (player.currentScore == 1000)
+   ctx.fillText("SCORE:" + player.currentScore, 7, 35);
+   if (player.currentScore >= 1100)
    {
       gameStarted = false;
       gameFinished = true;
    }
 }
-
 function randomIntFromInterval(min, max)
 {
    return Math.floor(Math.random() * (max - min + 1) + min);
 }
-
 function eventHandler()
 {
    window.addEventListener('keydown', function(event)
@@ -787,7 +784,6 @@ function eventHandler()
       if (event.keyCode == 39) game.rightArr = false;
    }, false);
 }
-
 function ImpactX(entity, repetitions, reverse = false)
 {
    if (intervalOngoing) return;
@@ -821,7 +817,6 @@ function ImpactX(entity, repetitions, reverse = false)
       }
    }, 16.6666666667);
 }
-
 function animatePlayer(defaultImage, walkingImage, context)
 {
    if (player.timerForFirstImage < 5)
@@ -841,7 +836,6 @@ function animatePlayer(defaultImage, walkingImage, context)
       player.timerForSecondImage = 0;
    }
 }
-
 function mirrorImage(ctx, spriteImage, sourceX, sourceY, spriteWidth, spriteHeight)
 {
    ctx.save();
@@ -850,7 +844,6 @@ function mirrorImage(ctx, spriteImage, sourceX, sourceY, spriteWidth, spriteHeig
    ctx.drawImage(spriteImage, -sourceX, sourceY, spriteWidth, spriteHeight);
    ctx.restore();
 }
-
 function animateFlipImage(defaultImage, walkingImage, ctx, spriteWidth, spriteHeight)
 {
    if (player.timerForFirstImage < 5)
@@ -882,7 +875,6 @@ function animateFlipImage(defaultImage, walkingImage, ctx, spriteWidth, spriteHe
       player.timerForSecondImage = 0;
    }
 }
-
 function EnemyProjectileOrder()
 {
    enemyProjectile.hitplayer();
@@ -892,7 +884,6 @@ function EnemyProjectileOrder()
    enemyProjectile.reset();
    enemyProjectile.draw();
 }
-
 function rectCollision(o1, o2)
 {
    if (o1 instanceof Player)
@@ -916,7 +907,6 @@ function rectCollision(o1, o2)
    if (r1x <= r2x + r2w && r1x + r1w >= r2x && r1y < r2y + r2h && r1y + r1h > r2y) return true;
    return false;
 }
-
 function rotateAndPaintImage(context, image, angleInRad, positionX, positionY, axisX, axisY, width, height)
 {
    context.translate(positionX, positionY);
@@ -925,7 +915,6 @@ function rotateAndPaintImage(context, image, angleInRad, positionX, positionY, a
    context.rotate(-angleInRad);
    context.translate(-positionX, -positionY);
 }
-
 function HitPlayer1(decrement_lives_permission)
 {
    if (decrement_lives_permission == 10)
@@ -935,14 +924,12 @@ function HitPlayer1(decrement_lives_permission)
    }
    return decrement_lives_permission;
 }
-
 function HitPlayer2(decrement_lives_permission)
 {
    if (decrement_lives_permission == 0) decrement_lives_permission = 10;
    if (decrement_lives_permission != 10) decrement_lives_permission--;
    return decrement_lives_permission;
 }
-
 function EnemyOrder()
 {
    enemy.draw();
@@ -953,14 +940,12 @@ function EnemyOrder()
    enemy.ascertainCollision();
    enemy.r_move();
 }
-
 function ProjectileOrder()
 {
    projectile.ascertainMovement();
    projectile.ascertainCollision();
    projectile.draw();
 }
-
 function PlayerOrder()
 {
    player.ascertainGravity();
@@ -970,15 +955,14 @@ function PlayerOrder()
    player.processLives();
    player.powerender()
 }
-
 function ScoreAddedText()
 {
    if (scoreAdded)
    {
-      ctx.font = "35px Impact";
-      ctx.fillStyle = "red";
+      ctx.font = "35px Lucida Console";
+      ctx.fillStyle = "Lavender";
       ctx.textAlign = "left";
-      ctx.fillText("+" + enemy.scoreKill, 85, 70);
+      ctx.fillText("+" + enemy.scoreKill, 113, 70);
       scoreAddedCounter--;
       if (scoreAddedCounter <= 0)
       {
@@ -989,19 +973,29 @@ function ScoreAddedText()
       }
    }
 }
-
 function GameFinishedScreen()
 {
-   var my_gradient = ctx.createLinearGradient(0, 0, canvas.width, 0);
-   my_gradient.addColorStop("0", " magenta");
-   my_gradient.addColorStop("0.5", "yellow");
-   my_gradient.addColorStop("1.0", "purple");
-   ctx.fillStyle = "red";
-   ctx.textAlign = "center";
-   ctx.fillText("Game finished!", canvas.width / 2, canvas.height / 2 - 100);
-   ctx.fillText("Press Enter to restart!", canvas.width / 2, canvas.height / 2);
-}
+   var my_gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
+   my_gradient.addColorStop("0", "DarkSlateGrey");
+   my_gradient.addColorStop("1.0", "Khaki");
+   ctx.fillStyle = my_gradient;
+   ctx.fillRect(0, 0, 500, 500);
+   ctx.fillStyle = "black";
+   ctx.font = "bold 30px Lucida Console";
+   ctx.fillText("GAME FINISHED!", 125, 100);
+   ctx.fillText("PRESS ENTER TO RESTART!",50, 150);
+   ctx.font = "bold 15px Lucida Console" 
+   ctx.fillText("DEVELOPED BY", 30, 300);
+   ctx.fillText("ARTWORK BY", 390, 300);
+   ctx.font = "bold 20px Lucida Console"
+   ctx.fillText("smook", 50, 350);
+   ctx.fillText("widqk", 50, 390);
+   ctx.fillText("gemini", 50, 430);
+   ctx.fillText("gjokomk", 395, 350);
 
+   ctx.fillStyle = 'DarkSlateGrey'
+   ctx.fillRect(150,295,232,0.8)
+}
 function StartScreenText()
 {
    var my_gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
@@ -1013,7 +1007,7 @@ function StartScreenText()
    ctx.textAlign = "center";
    ctx.font = "18px Lucida Console";
    ctx.fillText("Use arrow keys to move!", 130, 300);
-   ctx.fillText("Press Space to jump!", 390, 300);
+   ctx.fillText("Press Space to shoot!", 385, 300);
    ctx.font = "bold 16px Lucida Console"
    ctx.fillStyle = "DarkSlateGrey"
    ctx.fillText("POWER-UPS", 250, 345)
@@ -1050,8 +1044,13 @@ function StartScreenText()
    ctx.textAlign = "center";
    ctx.font = "bold 35px Lucida Console"
    ctx.fillText("PRESS ENTER TO START!", canvas.width / 2, canvas.height / 2 - 15);
-}
 
+   ctx.fillStyle = 'DarkSlateGrey'
+   ctx.fillRect(13,340,187,0.8)
+   ctx.fillRect(300,340,190,0.8)
+   ctx.fillRect(300,430,190,0.8)
+   ctx.fillRect(13,430,187,0.8)
+}
 function WaitForStart()
 {
    if (!gameFinished)
@@ -1095,7 +1094,6 @@ function WaitForStart()
    }
    else GameFinishedScreen();
 }
-
 function recurring()
 {
    game.drawCanvas();
