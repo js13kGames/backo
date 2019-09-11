@@ -229,8 +229,9 @@ class Player
       if (this.lives <= 0)
       {
          this.dead = true;
-         ctx.fillStyle = "red";
-         ctx.fillText("YOU DIED!", 175, 250);
+         ctx.fillStyle = "DarkSlateGrey";
+         ctx.font = "bold 90px Lucida Console"
+         ctx.fillText("R.I.P", 120, 280);
          deathCountdown--;
          this.x = 700;
          if (deathCountdown == 0)
@@ -359,7 +360,7 @@ class PowerUp
    constructor()
    {
       this.x = -250;
-      this.y = 465;
+      this.y = 455;
       this.r = 5;
       this.type = null;
       this.spawned = false;
@@ -570,8 +571,8 @@ class Enemy
    {
       if (this.x > 500)
       {
-         scoreAdded = true;
-         player.currentScore += 50;
+         scoreAdded = player.dead ? false : true;
+         player.currentScore += player.dead ? 0 : 50;
          this.respawn();
          return;
       }
